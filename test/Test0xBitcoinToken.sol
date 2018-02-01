@@ -2,12 +2,12 @@ pragma solidity ^0.4.2;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/00xBitcoinToken.sol";
+import "../contracts/ZxBitcoinToken.sol";
 
 contract Test0xBitcoinToken {
 
   function testInitialBalanceUsingDeployedContract() {
- 
+
 
   //  Assert.equal(meta.name, "ETHERGOODS", "Deployed contract has a name");
   }

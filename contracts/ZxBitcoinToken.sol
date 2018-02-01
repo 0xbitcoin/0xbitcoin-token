@@ -254,7 +254,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     }
 
-    function _startNewMiningEpoch(contractInitialization) internal {//a new block to be mined
+    function _startNewMiningEpoch(bool contractInitialization) internal {//a new block to be mined
 
       //calculate difficulty
       latestMiningEpochStarted = block.number;
@@ -267,11 +267,11 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
       if(contractInitialization)
       {
-        rewardEra = 0
+        rewardEra = 0;
       }
 
       //set the next minted supply at which the era will change
-      maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1))
+      maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
 
       //make the latest ethereum block hash a part of the challenge for PoW to prevent pre-mining future blocks
       challenge_number = block.blockhash(block.number - 1);
@@ -279,17 +279,17 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
       if(epochCount % 2016 == 0)
       {
-        _reAdjustDifficulty(contractInitialization)
+        _reAdjustDifficulty(contractInitialization);
       }
 
-      epochCount = epochCount.add(1)
+      epochCount = epochCount.add(1);
 
     }
 
 
     //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
     //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
-    function _reAdjustDifficulty(contractInitialization) internal {
+    function _reAdjustDifficulty(bool contractInitialization) internal {
         if(contractInitialization)
         {
           miningDifficulty = 2;
@@ -301,8 +301,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         //assume 360 ethereum blocks per hour
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
-        uint epochsMined = 2016
-        uint targetEthBlocksPerEpoch = 2016 * 60
+        uint epochsMined = 2016;
+        uint targetEthBlocksPerEpoch = 2016 * 60;
 
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
         {
@@ -319,12 +319,12 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
         if(miningDifficulty < 2)
         {
-          miningDifficulty = 2
+          miningDifficulty = 2;
         }
 
         if(miningDifficulty > 54)
         {
-          miningDifficulty = 54
+          miningDifficulty = 54;
         }
     }
 
@@ -382,7 +382,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     //The difficulty is the number of zeroes that the hash needs to begin with
     //This is equal to '2' plus another two per 100,000 coins that have been mined
     function getMiningDifficulty() public constant returns (uint) {
-        retun miningDifficulty;
+        return miningDifficulty;
         //return (tokensMinted.div(100000)).mul(2).add(2);
 
     }
