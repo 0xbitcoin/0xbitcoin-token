@@ -327,8 +327,6 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         }
 
 
-        //miningDifficultyDelta
-        //miningDifficulty += miningDifficultyDelta
 
         latestDifficultyPeriodStarted = block.number;
 
@@ -389,7 +387,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         tokensMinted = tokensMinted.add(reward_amount);
 
 
-        //set readonly diagnostics data 
+        //set readonly diagnostics data
         lastRewardTo = msg.sender;
         lastRewardAmount = reward_amount;
         lastRewardEthBlockNumber = block.number;
@@ -403,24 +401,20 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     }
 
-
+    //this is a recent ethreum block hash, used to prevent pre-mining future blocks
     function getChallengeNumber() public constant returns (bytes32) {
         return challengeNumber;
-        //return (tokensMinted.div(100000)).mul(2).add(2);
-
     }
 
-    //The difficulty is the number of zeroes that the hash needs to begin with
-    //This is equal to '2' plus another two per 100,000 coins that have been mined
-    function getMiningDifficulty() public constant returns (uint) {
+    //the number of zeroes the digest of the PoW solution requires.  Auto adjusts
+     function getMiningDifficulty() public constant returns (uint) {
         return miningDifficulty;
-        //return (tokensMinted.div(100000)).mul(2).add(2);
-
     }
 
 
 
     //21m coins total
+    //reward begins at 50 and is cut in half every reward era (as tokens are mined)
     function getMiningReward() public constant returns (uint) {
         //once we get half way thru the coins, only get 25 per block
 
