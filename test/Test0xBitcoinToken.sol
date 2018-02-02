@@ -2,7 +2,7 @@ pragma solidity ^0.4.2;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/ZxBitcoinToken.sol";
+import "../contracts/_0xBitcoinToken.sol";
 
 contract Test0xBitcoinToken {
 

@@ -1,4 +1,4 @@
-var _0xBitcoinToken = artifacts.require("./0xBitcoinToken.sol");
+var _0xBitcoinToken = artifacts.require("./_0xBitcoinToken.sol");
 
 var ethUtil =  require('ethereumjs-util');
 var web3utils =  require('web3-utils');
