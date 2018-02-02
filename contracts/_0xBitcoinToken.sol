@@ -17,9 +17,6 @@ pragma solidity ^0.4.18;
 
 //
 
-// Enjoy.
-
-//
 
 // ----------------------------------------------------------------------------
 
@@ -284,7 +281,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       challengeNumber = block.blockhash(block.number - 1);
 
- 
+
       epochCount = epochCount.add(1);
 
       //every so often, readjust difficulty, dont readjust when deploying
@@ -312,7 +309,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
         uint epochsMined = _BLOCKS_PER_READJUSTMENT;
-        uint targetEthBlocksPerEpoch = _BLOCKS_PER_READJUSTMENT * 60;
+        uint targetEthBlocksPerEpoch = epochsMined * 60;
 
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
         {
