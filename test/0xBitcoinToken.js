@@ -46,8 +46,8 @@ contract('_0xBitcoinToken', function(accounts) {
 
      var challenge_number = 123456 //block number
 
-     var nonce = 2101080309
-    var challenge_digest = '005b6b6708665d7a5d1e9b8a53ead15c9ba14c9f84a0b170d7b6fe119edf4ef8'
+     var nonce = 1768703638
+    var challenge_digest = '00007d39211482edea77e20ad4eb52ee9d69931c54e08abe14f80982d7908295'
 
 
     var msg_sender = accounts[0]
