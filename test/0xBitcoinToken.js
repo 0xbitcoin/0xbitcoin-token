@@ -44,30 +44,31 @@ contract('_0xBitcoinToken', function(accounts) {
     console.log(tokenContract.address)
 
 
-    //3549073735 ->  0x32f80a141c651deae5d36688163d275858d72e956616d7bcccb21b8869e4da30 ??
-    var challenge_number = 3552927407
-    var challenge_digest = '0007e4c9ad0890ee34f6d98852d24ce6e9cc6ecfad8f2bd39b7c87b05e8e050b'
+     var challenge_number = 123456 //block number
 
-    var msg_sender = "0x1234"
+     var nonce = 2101080309
+    var challenge_digest = '005b6b6708665d7a5d1e9b8a53ead15c9ba14c9f84a0b170d7b6fe119edf4ef8'
+
+
+    var msg_sender = accounts[0]
 //  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(challenge_digest)
 //   const phraseDigesttest   = web3utils.sha3(web3utils.toHex(challenge_number), {encoding:"hex"});
-  const phraseDigest   = web3utils.soliditySha3( msg_sender , challenge_number )
+  const phraseDigest = web3utils.soliditySha3(challenge_number, '0x0529dccdd203181e4e19f3ca28a7cf5790267cfd', nonce )
 
-//   console.log(phraseDigesttest)
-
-//  const phraseDigest = solidityHelper.solidityKeccak256(  challenge_number)
-
-  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(phraseDigest)
+//  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(phraseDigest)
   console.log(phraseDigest);  // 0x0007e4c9ad0890ee34f6d98852d24ce6e9cc6ecfad8f2bd39b7c87b05e8e050b
   console.log(challenge_digest);
-  console.log(challengeDigestBytes32)
+  console.log(nonce)
 
-  var mint_tokens = await tokenContract.mint.call(challenge_number,phraseDigest);
+  var mint_tokens = await tokenContract.mint.call(nonce,phraseDigest, {from: '0x0529dccdd203181e4e19f3ca28a7cf5790267cfd'});
 
    console.log("token mint: " + mint_tokens);
 
 
   assert.equal(true, mint_tokens ); //initialized
+
+
+});
 /*
   assert.equal(10, good_type_record[4].toNumber() ); //check price
 
@@ -100,8 +101,8 @@ var result =   await contract.claimGood(  typeId , function(){} ,{ value:web3uti
 
 //  assert.equal(true, token_record ); //initialized
 
-}),
 
+/*
 it("can bid on the market", async function () {
 
   var tokenContract = await GoodToken.deployed();
@@ -117,36 +118,10 @@ it("can bid on the market", async function () {
 
 
 
-/*
-
-var contract = await EtherGoods.deployed();
-
-  var unique_hash = ethUtil.bufferToHex(ethUtil.sha3("canoeasset"));
-  await contract.claimGood(unique_hash);
-
-
-  var good_record = await contract.goods.call(unique_hash);
-
-  var balance_of = await contract.getSupplyBalance.call(unique_hash,accounts[0]);
-
-    console.log("balance");
-    console.log(balance_of);
-      console.log(balance_of['c'][0]);
-
-  var balance_of_value = balance_of['c'][0];
-
-  assert.equal(3, balance_of_value );
-*/
 }),
 
 
 
-/*
-  it("can not buy a punk with an invalid index", async function () {
-      var contract = await CryptoPunksMarket.deployed();
-      await expectThrow(contract.claimGood(100000));
-    }),
-    */
 
   it("can not get supply while supply all taken", async function () {
       var contract = await EtherGoods.deployed();
@@ -161,42 +136,7 @@ var contract = await EtherGoods.deployed();
       console.log("Balance after fail: " + balance);
     });
 
-/*
-  it("should send coin correctly", function() {
-    var meta;
 
-    // Get initial balances of first and second account.
-    var account_one = accounts[0];
-    var account_two = accounts[1];
-
-    var account_one_starting_balance;
-    var account_two_starting_balance;
-    var account_one_ending_balance;
-    var account_two_ending_balance;
-
-    var amount = 10;
-
-    return MetaCoin.deployed().then(function(instance) {
-      meta = instance;
-      return meta.getBalance.call(account_one);
-    }).then(function(balance) {
-      account_one_starting_balance = balance.toNumber();
-      return meta.getBalance.call(account_two);
-    }).then(function(balance) {
-      account_two_starting_balance = balance.toNumber();
-      return meta.sendCoin(account_two, amount, {from: account_one});
-    }).then(function() {
-      return meta.getBalance.call(account_one);
-    }).then(function(balance) {
-      account_one_ending_balance = balance.toNumber();
-      return meta.getBalance.call(account_two);
-    }).then(function(balance) {
-      account_two_ending_balance = balance.toNumber();
-
-      assert.equal(account_one_ending_balance, account_one_starting_balance - amount, "Amount wasn't correctly taken from the sender");
-      assert.equal(account_two_ending_balance, account_two_starting_balance + amount, "Amount wasn't correctly sent to the receiver");
-    });
-  });
 
   */
 });

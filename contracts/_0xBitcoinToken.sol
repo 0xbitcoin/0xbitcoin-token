@@ -194,10 +194,13 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public _totalSupply;
 
 
+
       //ethereum block number when last 0xbtc was minted
     uint public latestMiningEpochStarted;
 
     uint public latestDifficultyPeriodStarted;
+
+    uint public _BLOCKS_PER_READJUSTMENT = 2016;
 
     uint public epochCount;//number of 'blocks' mined
 
@@ -277,7 +280,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
       challenge_number = block.blockhash(block.number - 1);
 
 
-      if(epochCount % 2016 == 0)
+      if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
       {
         _reAdjustDifficulty(contractInitialization);
       }
@@ -287,12 +290,14 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     }
 
 
+
+
     //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
     //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
     function _reAdjustDifficulty(bool contractInitialization) internal {
         if(contractInitialization)
         {
-          miningDifficulty = 2;
+          miningDifficulty = 4;
           return;
         }
 
@@ -301,8 +306,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         //assume 360 ethereum blocks per hour
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
-        uint epochsMined = 2016;
-        uint targetEthBlocksPerEpoch = 2016 * 60;
+        uint epochsMined = _BLOCKS_PER_READJUSTMENT;
+        uint targetEthBlocksPerEpoch = _BLOCKS_PER_READJUSTMENT * 60;
 
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
         {
@@ -317,9 +322,9 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
         latestDifficultyPeriodStarted = block.number;
 
-        if(miningDifficulty < 2)
+        if(miningDifficulty < 4)
         {
-          miningDifficulty = 2;
+          miningDifficulty = 4;
         }
 
         if(miningDifficulty > 54)
@@ -349,10 +354,14 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         uint difficulty = getMiningDifficulty();
         uint reward_amount = getMiningReward();
 
-        bytes32 digest =  keccak256(challenge_number,msg.sender,nonce );
+
+        challenge_number = 123456; //block number
+
+        bytes32 digest =  keccak256(challenge_number, msg.sender, nonce );
 
         //the challenge digest must be the sha3 result of the word   plus the challenge number
         if (digest != challenge_digest) revert();
+
 
 
         //the digest must start with X zeroes where X is the difficulty
