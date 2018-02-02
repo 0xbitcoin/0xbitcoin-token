@@ -23,7 +23,8 @@ truffle test
 
  
 ### Published contracts on ROPSTEN
-rev1.  0x8465bfe69b65aa92f58008635999c3f7688b0c6e 
+rev1. (6 difficulty)  0x8465bfe69b65aa92f58008635999c3f7688b0c6e 
+rev2. (4 difficulty) 0x9ec7567938f19d08d1915c2ab7ed23c743e49e31
 
 Deployed to Ropsten   
  
