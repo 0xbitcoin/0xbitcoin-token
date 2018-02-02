@@ -1,6 +1,10 @@
  
  ## 0xBitcoin 
  
+ 
+![0xbitcoin_small](https://user-images.githubusercontent.com/36060731/35717032-b47d34d0-07aa-11e8-9d1a-48dafbbb2ca0.png)
+
+ 
  #### An ERC20 token that is mined using PoW through a SmartContract 
   
   * No pre-mine 
