@@ -196,20 +196,26 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
       //ethereum block number when last 0xbtc was minted
-    uint public latestMiningEpochStarted;
+  //  uint public latestMiningEpochStarted;
 
     uint public latestDifficultyPeriodStarted;
 
-    uint public _BLOCKS_PER_READJUSTMENT = 2016;
+
 
     uint public epochCount;//number of 'blocks' mined
 
+
+    uint public _BLOCKS_PER_READJUSTMENT = 2016;
+
+    uint public  _MINIMUM_DIFFICULTY = 6;
+
+    uint public  _MAXIMUM_DIFFICULTY = 54;
 
 
 
     uint public miningDifficulty; //adjusts every 2016 epochs (or blocks)
 
-    bytes32 public challenge_number;   //generate a new one when a new reward is minted
+    bytes32 public challengeNumber;   //generate a new one when a new reward is minted
 
 
 
@@ -229,7 +235,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
 
-    event Mint(address indexed from, uint reward_amount, uint difficulty);
+    event Mint(address indexed from, uint reward_amount, uint difficulty, bytes32 newChallengeNumber);
 
     // ------------------------------------------------------------------------
 
@@ -246,10 +252,16 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         decimals = 8;
 
         _totalSupply = 21000000 * 10**uint(decimals);
+        tokensMinted = 0;
 
+        rewardEra = 0;
+        maxSupplyForEra = _totalSupply.div(2);
 
+        miningDifficulty = _MINIMUM_DIFFICULTY;
 
-        _startNewMiningEpoch(true);
+        latestDifficultyPeriodStarted = block.number;
+
+        _startNewMiningEpoch();
 
         //balances[owner] = _totalSupply;
 
@@ -257,35 +269,31 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     }
 
-    function _startNewMiningEpoch(bool contractInitialization) internal {//a new block to be mined
+    function _startNewMiningEpoch() internal {//a new block to be mined
 
-      //calculate difficulty
-      latestMiningEpochStarted = block.number;
+      //latestMiningEpochStarted = block.number;
 
-
-      if(tokensMinted > maxSupplyForEra && rewardEra < 32)
+      if(tokensMinted >= maxSupplyForEra && rewardEra < 32) //32 is the final era, almost all tokens minted
       {
         rewardEra = rewardEra + 1;
-      }
-
-      if(contractInitialization)
-      {
-        rewardEra = 0;
       }
 
       //set the next minted supply at which the era will change
       maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
 
-      //make the latest ethereum block hash a part of the challenge for PoW to prevent pre-mining future blocks
-      challenge_number = block.blockhash(block.number - 1);
+      //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
+      challengeNumber = block.blockhash(block.number - 1);
 
+ 
+      epochCount = epochCount.add(1);
 
+      //every so often, readjust difficulty, dont readjust when deploying
       if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
       {
-        _reAdjustDifficulty(contractInitialization);
+        _reAdjustDifficulty();
       }
 
-      epochCount = epochCount.add(1);
+
 
     }
 
@@ -294,14 +302,11 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
     //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
-    function _reAdjustDifficulty(bool contractInitialization) internal {
-        if(contractInitialization)
-        {
-          miningDifficulty = 4;
-          return;
-        }
+    function _reAdjustDifficulty() internal {
+
 
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
+
 
         //assume 360 ethereum blocks per hour
 
@@ -322,24 +327,24 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
         latestDifficultyPeriodStarted = block.number;
 
-        if(miningDifficulty < 4)
+        if(miningDifficulty < _MINIMUM_DIFFICULTY) //6
         {
-          miningDifficulty = 4;
+          miningDifficulty = _MINIMUM_DIFFICULTY;
         }
 
-        if(miningDifficulty > 54)
+        if(miningDifficulty > _MAXIMUM_DIFFICULTY) //54
         {
-          miningDifficulty = 54;
+          miningDifficulty = _MAXIMUM_DIFFICULTY;
         }
     }
 
 
-    function mintTest(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
+    /*function mintTest(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
 
         uint difficulty = getMiningDifficulty();
         uint reward_amount = getMiningReward();
 
-        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+        bytes32 digest = keccak256(challengeNumber,msg.sender,nonce);
         //this is not turning out right !!
 
         //bytes memory characters = bytes(digest);
@@ -347,46 +352,53 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         return digest[1];
 
 
-      }
+      }*/
 
     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
 
         uint difficulty = getMiningDifficulty();
         uint reward_amount = getMiningReward();
 
+        //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+        bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
 
-        challenge_number = 123456; //block number
-
-        bytes32 digest =  keccak256(challenge_number, msg.sender, nonce );
-
-        //the challenge digest must be the sha3 result of the word   plus the challenge number
+        //the challenge digest must match the expected
         if (digest != challenge_digest) revert();
-
-
 
         //the digest must start with X zeroes where X is the difficulty
          for(uint i = 0; i < difficulty.div(2)   ; i++) {
             if (digest[i] != 0x00 ) revert();
          }
 
-       if(rewardHashesFound[digest] != 0) revert();
+         uint hashFound = rewardHashesFound[digest];
 
-       rewardHashesFound[digest] = difficulty;
+         rewardHashesFound[digest] = difficulty;
+
+         if(hashFound != 0) revert();  //prevent the same answer from awarding twice
+
+
 
         balances[msg.sender] = balances[msg.sender].add(reward_amount);
 
 
         tokensMinted = tokensMinted.add(reward_amount);
 
-        Mint(msg.sender, reward_amount, difficulty);
 
 
-        _startNewMiningEpoch(false);
+         _startNewMiningEpoch();
+
+          Mint(msg.sender, reward_amount, difficulty, challengeNumber );
 
        return true;
 
     }
 
+
+    function getChallengeNumber() public constant returns (bytes32) {
+        return challengeNumber;
+        //return (tokensMinted.div(100000)).mul(2).add(2);
+
+    }
 
     //The difficulty is the number of zeroes that the hash needs to begin with
     //This is equal to '2' plus another two per 100,000 coins that have been mined
@@ -399,7 +411,6 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     //21m coins total
     function getMiningReward() public constant returns (uint) {
         //once we get half way thru the coins, only get 25 per block
-          //uint reward_era = 1
 
          //every reward era, the reward amount halves.
 

@@ -44,10 +44,13 @@ contract('_0xBitcoinToken', function(accounts) {
     console.log(tokenContract.address)
 
 
-     var challenge_number = 123456 //block number
+    var challenge_number = await tokenContract.getChallengeNumber.call( );
+    console.log('challenge_number',challenge_number)
 
-     var nonce = 1768703638
-    var challenge_digest = '00007d39211482edea77e20ad4eb52ee9d69931c54e08abe14f80982d7908295'
+  //  challenge_number = '0x513d3339b587b62e4ea2b9d2762113a245f9fdad264d37bcc6829ce66bd4d456';
+
+     var nonce = 2969915614
+    var challenge_digest = '0000609b4446d74fe8a356c13f833752c688fc4ffa7537de0f6613248fed90d5'
 
 
     var msg_sender = accounts[0]
@@ -60,7 +63,12 @@ contract('_0xBitcoinToken', function(accounts) {
   console.log(challenge_digest);
   console.log(nonce)
 
+
+
   var mint_tokens = await tokenContract.mint.call(nonce,phraseDigest, {from: '0x0529dccdd203181e4e19f3ca28a7cf5790267cfd'});
+
+ 
+
 
    console.log("token mint: " + mint_tokens);
 
