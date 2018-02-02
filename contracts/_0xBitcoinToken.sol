@@ -219,11 +219,19 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public rewardEra;
     uint public maxSupplyForEra;
 
+
+    address public lastRewardTo;
+    uint public lastRewardAmount;
+    uint public lastRewardEthBlockNumber;
+
+
     mapping(bytes32 => uint) rewardHashesFound; //the hash and the nonce
 
     uint public tokensMinted;
 
     mapping(address => uint) balances;
+
+
 
 
 
@@ -381,6 +389,11 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         tokensMinted = tokensMinted.add(reward_amount);
 
 
+        //set readonly diagnostics data 
+        lastRewardTo = msg.sender;
+        lastRewardAmount = reward_amount;
+        lastRewardEthBlockNumber = block.number;
+
 
          _startNewMiningEpoch();
 
@@ -405,6 +418,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     }
 
+
+
     //21m coins total
     function getMiningReward() public constant returns (uint) {
         //once we get half way thru the coins, only get 25 per block
@@ -414,6 +429,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
          return (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
 
     }
+
+
 
     // ------------------------------------------------------------------------
 
