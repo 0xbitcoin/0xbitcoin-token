@@ -380,7 +380,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         //the challenge digest must match the expected
         if (digest != challenge_digest) revert();
 
-        //the digest must start with X zeroes where X is the difficulty
+        //the digest must start with X 'zero' bytes where X is the difficulty
         for(uint i = 0; i < difficulty    ; i++) {
            if (digest[i] != 0x0 ) revert();
         }
