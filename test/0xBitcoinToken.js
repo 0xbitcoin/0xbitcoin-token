@@ -49,26 +49,34 @@ contract('_0xBitcoinToken', function(accounts) {
 
   //  challenge_number = '0x513d3339b587b62e4ea2b9d2762113a245f9fdad264d37bcc6829ce66bd4d456';
 
-     var nonce = 2969915614
-    var challenge_digest = '0000609b4446d74fe8a356c13f833752c688fc4ffa7537de0f6613248fed90d5'
+    challenge_number = '0x085078f6e3066836445e800334b4186d99567065512edfe78fa7a4f611d51c3d'
 
+     var solution_number = 1185888746
+    var solution_digest = '0x000016d56489592359ce8e8b61ec335aeb7b7dd5695da22e25ab2039e02c8976'
+
+    var from_address = '0x2B63dB710e35b0C4261b1Aa4fAe441276bfeb971';
+
+    var difficulty = 2;
 
     var msg_sender = accounts[0]
 //  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(challenge_digest)
 //   const phraseDigesttest   = web3utils.sha3(web3utils.toHex(challenge_number), {encoding:"hex"});
-  const phraseDigest = web3utils.soliditySha3(challenge_number, '0x0529dccdd203181e4e19f3ca28a7cf5790267cfd', nonce )
+  const phraseDigest = web3utils.soliditySha3(challenge_number, from_address, solution_number )
 
 //  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(phraseDigest)
-  console.log(phraseDigest);  // 0x0007e4c9ad0890ee34f6d98852d24ce6e9cc6ecfad8f2bd39b7c87b05e8e050b
-  console.log(challenge_digest);
-  console.log(nonce)
+  console.log('phraseDigest', phraseDigest);  // 0x0007e4c9ad0890ee34f6d98852d24ce6e9cc6ecfad8f2bd39b7c87b05e8e050b
+  console.log(solution_digest);
+  console.log(solution_number)
 
 
+  var checkDigest = await tokenContract.getMintDigest.call(solution_number,phraseDigest,challenge_number, {from: from_address});
 
-  var mint_tokens = await tokenContract.mint.call(nonce,phraseDigest, {from: '0x0529dccdd203181e4e19f3ca28a7cf5790267cfd'});
+  console.log('checkDigest',checkDigest)
 
- 
+  var checkSuccess = await tokenContract.checkMintSolution.call(solution_number,phraseDigest,challenge_number, difficulty, {from: from_address});
+    console.log('checkSuccess',checkSuccess)
 
+  //var mint_tokens = await tokenContract.mint.call(solution_number,phraseDigest, {from: from_address});
 
    console.log("token mint: " + mint_tokens);
 
