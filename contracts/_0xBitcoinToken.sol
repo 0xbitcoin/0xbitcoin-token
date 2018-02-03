@@ -342,7 +342,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     }
 
 
-    /*function mintTest(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
+    function mintTestA(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
 
         uint difficulty = getMiningDifficulty();
         uint reward_amount = getMiningReward();
@@ -355,7 +355,71 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         return digest[1];
 
 
-      }*/
+      }
+
+      function mintTestB(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
+
+        uint difficulty = getMiningDifficulty();
+        uint reward_amount = getMiningReward();
+
+        //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+        bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+
+        //the challenge digest must match the expected
+        if (digest != challenge_digest) revert();
+
+
+        }
+
+        function mintTestC(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
+
+          uint difficulty = getMiningDifficulty();
+          uint reward_amount = getMiningReward();
+
+          //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+          bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+
+          //the challenge digest must match the expected
+          if (digest != challenge_digest) revert();
+
+          //the digest must start with X zeroes where X is the difficulty
+           for(uint i = 0; i < difficulty.div(2)   ; i++) {
+              if (digest[i] != 0x00 ) revert();
+           }
+
+
+          }
+
+          function mintTestD(uint256 nonce, bytes32 challenge_digest) public returns (bytes1 digesttest) {
+
+            uint difficulty = getMiningDifficulty();
+            uint reward_amount = getMiningReward();
+
+            //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+            bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+
+            //the challenge digest must match the expected
+            if (digest != challenge_digest) revert();
+
+            //the digest must start with X zeroes where X is the difficulty
+             for(uint i = 0; i < difficulty.div(2)   ; i++) {
+                if (digest[i] != 0x00 ) revert();
+             }
+
+
+             uint hashFound = rewardHashesFound[digest];
+
+
+              rewardHashesFound[digest] = difficulty;
+
+              if(hashFound != 0) revert();  //prevent the same answer from awarding twice
+
+
+
+             balances[msg.sender] = balances[msg.sender].add(reward_amount);
+
+
+            }
 
     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
 
