@@ -202,15 +202,18 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public epochCount;//number of 'blocks' mined
 
 
-    uint public _BLOCKS_PER_READJUSTMENT = 2016;
-
-    uint public  _MINIMUM_DIFFICULTY = 2;
-
-    uint public  _MAXIMUM_DIFFICULTY = 54;
+    uint public _BLOCKS_PER_READJUSTMENT = 256;
 
 
+    //a big number is easier ; just find a solution that is smaller
+    uint public  _MINIMUM_TARGET = 2**8;
 
-    uint public miningDifficulty; //adjusts every 2016 epochs (or blocks)
+    //a little number
+    uint public  _MAXIMUM_TARGET = 2**224;
+
+
+    uint public miningTarget;
+  //  uint public miningDifficulty; //adjusts every 2016 epochs (or blocks)
 
     bytes32 public challengeNumber;   //generate a new one when a new reward is minted
 
@@ -240,7 +243,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
 
-    event Mint(address indexed from, uint reward_amount, uint difficulty, bytes32 newChallengeNumber);
+    event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
 
     // ------------------------------------------------------------------------
 
@@ -262,7 +265,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         rewardEra = 0;
         maxSupplyForEra = _totalSupply.div(2);
 
-        miningDifficulty = _MINIMUM_DIFFICULTY;
+        miningTarget = _MAXIMUM_TARGET;
 
         latestDifficultyPeriodStarted = block.number;
 
@@ -307,37 +310,42 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
     //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
+
+    //readjust the target by 5 percent
     function _reAdjustDifficulty() internal {
 
 
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
 
-
         //assume 360 ethereum blocks per hour
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
-        uint epochsMined = _BLOCKS_PER_READJUSTMENT;
-        uint targetEthBlocksPerEpoch = epochsMined * 60;
+        uint epochsMined = _BLOCKS_PER_READJUSTMENT; //256
 
+        uint targetEthBlocksPerEpoch = epochsMined * 60; //should be 60 times slower than ethereum
+
+        //if there were less eth blocks passed in time than expected
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
         {
-          miningDifficulty = miningDifficulty + 1;
+          //make it harder
+          miningTarget = miningTarget.sub(miningTarget.div(20));
         }else{
-          miningDifficulty = miningDifficulty - 1;
+          //make it easier
+          miningTarget = miningTarget.add(miningTarget.div(20));
         }
 
 
 
         latestDifficultyPeriodStarted = block.number;
 
-        if(miningDifficulty < _MINIMUM_DIFFICULTY) //6
+        if(miningTarget < _MINIMUM_TARGET) //6
         {
-          miningDifficulty = _MINIMUM_DIFFICULTY;
+          miningTarget = _MINIMUM_TARGET;
         }
 
-        if(miningDifficulty > _MAXIMUM_DIFFICULTY) //54
+        if(miningTarget > _MAXIMUM_TARGET) //54
         {
-          miningDifficulty = _MAXIMUM_DIFFICULTY;
+          miningTarget = _MAXIMUM_TARGET;
         }
     }
 
@@ -350,19 +358,15 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
       }
 
-      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testDifficulty) public returns (bool success) {
-
-          uint difficulty = testDifficulty;
+      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public returns (bool success) {
+ 
           uint reward_amount = getMiningReward();
 
           bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
-          //this is not turning out right !!
 
           //bytes memory characters = bytes(digest);
 
-          for(uint i = 0; i < difficulty    ; i++) {
-             if (digest[i] != 0x0 ) revert();
-          }
+          if(uint256(digest) > testTarget) revert();
 
           return (digest == challenge_digest);
 
@@ -371,7 +375,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
 
-        uint difficulty = getMiningDifficulty();
+      //  uint difficulty = getMiningDifficulty();
         uint reward_amount = getMiningReward();
 
         //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
@@ -380,15 +384,14 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         //the challenge digest must match the expected
         if (digest != challenge_digest) revert();
 
-        //the digest must start with X 'zero' bytes where X is the difficulty
-        for(uint i = 0; i < difficulty    ; i++) {
-           if (digest[i] != 0x0 ) revert();
-        }
+        //the digest must be smaller than the target
+        if(uint256(digest) > miningTarget) revert();
+      //  for(uint i = 0; i < difficulty    ; i++) {
+      //     if (digest[i] != 0x0 ) revert();
+      //  }
 
          uint hashFound = rewardHashesFound[digest];
-
-         rewardHashesFound[digest] = difficulty;
-
+         rewardHashesFound[digest] = epochCount;
          if(hashFound != 0) revert();  //prevent the same answer from awarding twice
 
 
@@ -407,7 +410,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
          _startNewMiningEpoch();
 
-          Mint(msg.sender, reward_amount, difficulty, challengeNumber );
+          Mint(msg.sender, reward_amount, epochCount, challengeNumber );
 
        return true;
 
@@ -420,8 +423,12 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     //the number of zeroes the digest of the PoW solution requires.  Auto adjusts
      function getMiningDifficulty() public constant returns (uint) {
-        return miningDifficulty;
+        return _MAXIMUM_TARGET.div(miningTarget);
     }
+
+    function getMiningTarget() public constant returns (uint) {
+       return miningTarget;
+   }
 
 
 

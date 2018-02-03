@@ -56,7 +56,10 @@ contract('_0xBitcoinToken', function(accounts) {
 
     var from_address = '0x2B63dB710e35b0C4261b1Aa4fAe441276bfeb971';
 
-    var difficulty = 2;
+    var targetString = await tokenContract.getMiningTarget.call({from: from_address});
+    var target = web3utils.toBN(targetString);
+
+    console.log('target',target)
 
     var msg_sender = accounts[0]
 //  var challengeDigestBytes32 = solidityHelper.stringToSolidityBytes32(challenge_digest)
@@ -73,7 +76,7 @@ contract('_0xBitcoinToken', function(accounts) {
 
   console.log('checkDigest',checkDigest)
 
-  var checkSuccess = await tokenContract.checkMintSolution.call(solution_number,phraseDigest,challenge_number, difficulty, {from: from_address});
+  var checkSuccess = await tokenContract.checkMintSolution.call(solution_number,phraseDigest,challenge_number, target, {from: from_address});
     console.log('checkSuccess',checkSuccess)
 
   //var mint_tokens = await tokenContract.mint.call(solution_number,phraseDigest, {from: from_address});
