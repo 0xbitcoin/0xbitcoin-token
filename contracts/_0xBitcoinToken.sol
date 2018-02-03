@@ -209,7 +209,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public  _MINIMUM_TARGET = 2**8;
 
     //a little number
-    uint public  _MAXIMUM_TARGET = 2**224;
+    //uint public  _MAXIMUM_TARGET = 2**224;
+    uint public  _MAXIMUM_TARGET = 2**232;
 
 
     uint public miningTarget;
@@ -359,7 +360,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
       }
 
       function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public returns (bool success) {
- 
+
           uint reward_amount = getMiningReward();
 
           bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
