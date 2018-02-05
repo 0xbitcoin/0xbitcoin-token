@@ -205,12 +205,13 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public _BLOCKS_PER_READJUSTMENT = 256;
 
 
-    //a big number is easier ; just find a solution that is smaller
+    //a little number
     uint public  _MINIMUM_TARGET = 2**8;
 
-    //a little number
+
+      //a big number is easier ; just find a solution that is smaller
     //uint public  _MAXIMUM_TARGET = 2**224;
-    uint public  _MAXIMUM_TARGET = 2**232;
+    uint public  _MAXIMUM_TARGET = 2**240;
 
 
     uint public miningTarget;
