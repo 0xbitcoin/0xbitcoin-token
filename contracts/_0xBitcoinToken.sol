@@ -243,8 +243,10 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber;
 
+    bool locked = false;
 
-    mapping(bytes32 => uint) rewardHashesFound; //the hash and the nonce
+    mapping(bytes32 => bytes32) solutionForChallenge;
+    //mapping(bytes32 => uint) rewardHashesFound; //the hash and the nonce
 
     uint public tokensMinted;
 
@@ -269,6 +271,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     function _0xBitcoinToken() public onlyOwner{
 
+
+
         symbol = "0xBTC";
 
         name = "0xBitcoin Token";
@@ -276,6 +280,10 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         decimals = 8;
 
         _totalSupply = 21000000 * 10**uint(decimals);
+
+        if(locked) revert();
+        locked = true;
+
         tokensMinted = 0;
 
         rewardEra = 0;
@@ -286,6 +294,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         latestDifficultyPeriodStarted = block.number;
 
         _startNewMiningEpoch();
+
+
 
         //balances[owner] = _totalSupply;
 
@@ -411,13 +421,12 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
-      //  for(uint i = 0; i < difficulty    ; i++) {
-      //     if (digest[i] != 0x0 ) revert();
-      //  }
 
-         uint hashFound = rewardHashesFound[digest];
-         rewardHashesFound[digest] = epochCount;
-         if(hashFound != 0) revert();  //prevent the same answer from awarding twice
+
+        //only allow one reward for each challenge
+         bytes32 solution = solutionForChallenge[challengeNumber];
+         solutionForChallenge[challengeNumber] = digest;
+         if(solution != 0x0) revert();  //prevent the same answer from awarding twice
 
 
 
