@@ -10,18 +10,18 @@
   * No pre-mine 
   * No ICO
   * 21,000,000 tokens total
-  * Difficulty adjusts as more or less rewards are paid out
-  * Rewards decrease as more tokens are disbursed 
+  * Difficulty target auto-adjusts with PoW hashrate
+  * Rewards decrease as more tokens are minted 
   * Compatible with all services that support ERC20 tokens
   
   
    
  #### How does it work?
  
-Typically, ERC20 tokens will grant all tokens to the owner or will have an ICO and demand that large amounts of Ether be sent to the owner.   Instead of granting tokens to the 'contract owner', all 0xbitcoin tokens are locked within the smart contract initially.  These tokens are dispensed, 50 at a time, by calling the function 'mint'.  Here is what that looks like: 
+Typically, ERC20 tokens will grant all tokens to the owner or will have an ICO and demand that large amounts of Ether be sent to the owner.   Instead of granting tokens to the 'contract owner', all 0xbitcoin tokens are locked within the smart contract initially.  These tokens are dispensed, 50 at a time, by calling the function 'mint' and using Proof of Work, just like mining bitcoin.  Here is what that looks like: 
 
 
- function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
 
        
         uint reward_amount = getMiningReward();
@@ -48,14 +48,15 @@ Typically, ERC20 tokens will grant all tokens to the owner or will have an ICO a
         lastRewardTo = msg.sender;
         lastRewardAmount = reward_amount;
         lastRewardEthBlockNumber = block.number;
-
+        
+        //start a new round of mining with a new 'challengeNumber'
          _startNewMiningEpoch();
 
           Mint(msg.sender, reward_amount, epochCount, challengeNumber );
 
        return true;
 
-}
+    }
  
  
 As you can see, a special number called a 'nonce' has to be passed into this function in order for tokens to be dispensed.  This number has to fit a special 'puzzle' similar to a sudoku puzzle, and this is called Proof of Work.   To find this special number, it is necessary to run a mining program.  A cpu miner exists for mining 0xbitcoin tokens and it can be downloaded here: 
@@ -74,12 +75,14 @@ truffle test
 
  
 ### Published contracts on ROPSTEN
-rev1. (6 difficulty)  0x8465bfe69b65aa92f58008635999c3f7688b0c6e 
+rev1. (6 difficulty)  0x8465bfe69b65aa92f58008635999c3f7688b0c6e
+
 rev2. (4 difficulty) 0x9ec7567938f19d08d1915c2ab7ed23c743e49e31
 
-Deployed to Ropsten   
  
- -- http://remix.ethereum.org/#optimize=false&version=soljson-v0.4.19+commit.c4cbbb05.js ,.4.19+commit.c4cbbb05.Emscripten.clang
+ 
+ Compiler: 
+(http://remix.ethereum.org/#optimize=false&version=soljson-v0.4.19+commit.c4cbbb05.js ,.4.19+commit.c4cbbb05.Emscripten.clang )
  
 
  
