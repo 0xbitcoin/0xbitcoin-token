@@ -61,7 +61,7 @@ Typically, ERC20 tokens will grant all tokens to the owner or will have an ICO a
  
 As you can see, a special number called a 'nonce' has to be passed into this function in order for tokens to be dispensed.  This number has to fit a special 'puzzle' similar to a sudoku puzzle, and this is called Proof of Work.   To find this special number, it is necessary to run a mining program.  A cpu miner exists for mining 0xbitcoin tokens and it can be downloaded here: 
 
-https://github.com/0xbitcoin/0xbitcoin-token
+https://github.com/0xbitcoin/0xbitcoin-miner
 
 
  
