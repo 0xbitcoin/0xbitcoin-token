@@ -186,7 +186,7 @@ module.exports =  {
                   })
               }else {
                 console.log('submit mined solution with challenge ', challenge_number)
-                console.log('submit mined solution with soluion ', solution_number)
+                console.log('submit mined solution with solution ', solution_number)
                 this.submitNewMinedBlock( minerEthAddress, solution_number,   web3utils.bytesToHex( digestBytes32 ) , challenge_number);
               }
              }

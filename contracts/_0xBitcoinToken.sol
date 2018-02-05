@@ -216,7 +216,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public epochCount;//number of 'blocks' mined
 
 
-    uint public _BLOCKS_PER_READJUSTMENT = 4; //256;
+    uint public _BLOCKS_PER_READJUSTMENT = 256;
 
 
     //a little number
@@ -224,8 +224,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
       //a big number is easier ; just find a solution that is smaller
-    //uint public  _MAXIMUM_TARGET = 2**224;
-    uint public  _MAXIMUM_TARGET = 2**246;
+    //uint public  _MAXIMUM_TARGET = 2**224;  bitcoin uses 224
+    uint public  _MAXIMUM_TARGET = 2**240;
 
 
     uint public miningTarget;
