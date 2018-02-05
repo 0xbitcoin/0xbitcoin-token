@@ -66,6 +66,19 @@ library SafeMath {
 
 
 
+library ExtendedMath {
+
+
+    //return the smaller of the two inputs (a or b)
+    function limitLessThan(uint a, uint b) internal pure returns (uint c) {
+
+        if(a > b) return b;
+
+        return a;
+
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 // ERC Token Standard #20 Interface
@@ -180,6 +193,7 @@ contract Owned {
 contract _0xBitcoinToken is ERC20Interface, Owned {
 
     using SafeMath for uint;
+    using ExtendedMath for uint;
 
 
     string public symbol;
@@ -202,16 +216,16 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     uint public epochCount;//number of 'blocks' mined
 
 
-    uint public _BLOCKS_PER_READJUSTMENT = 256;
+    uint public _BLOCKS_PER_READJUSTMENT = 4; //256;
 
 
     //a little number
-    uint public  _MINIMUM_TARGET = 2**8;
+    uint public  _MINIMUM_TARGET = 2**16;
 
 
       //a big number is easier ; just find a solution that is smaller
     //uint public  _MAXIMUM_TARGET = 2**224;
-    uint public  _MAXIMUM_TARGET = 2**240;
+    uint public  _MAXIMUM_TARGET = 2**246;
 
 
     uint public miningTarget;
@@ -329,23 +343,32 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         //if there were less eth blocks passed in time than expected
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
         {
+          uint excess_block_pct = (targetEthBlocksPerEpoch.mul(100)).div( ethBlocksSinceLastDifficultyPeriod );
+
+          uint excess_block_pct_extra = excess_block_pct.sub(100).limitLessThan(1000);
+          // If there were 5% more blocks mined than expected then this is 5.  If there were 100% more blocks mined than expected then this is 100.
+
           //make it harder
-          miningTarget = miningTarget.sub(miningTarget.div(20));
+          miningTarget = miningTarget.sub(miningTarget.div(2000).mul(excess_block_pct_extra));
         }else{
+          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod.mul(100)).div( targetEthBlocksPerEpoch );
+
+          uint shortage_block_pct_extra = shortage_block_pct.sub(100).limitLessThan(1000); //always between 0 and 1000
+
           //make it easier
-          miningTarget = miningTarget.add(miningTarget.div(20));
+          miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));
         }
 
 
 
         latestDifficultyPeriodStarted = block.number;
 
-        if(miningTarget < _MINIMUM_TARGET) //6
+        if(miningTarget < _MINIMUM_TARGET) //very difficult
         {
           miningTarget = _MINIMUM_TARGET;
         }
 
-        if(miningTarget > _MAXIMUM_TARGET) //54
+        if(miningTarget > _MAXIMUM_TARGET) //very easy
         {
           miningTarget = _MAXIMUM_TARGET;
         }
