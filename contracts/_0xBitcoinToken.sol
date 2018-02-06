@@ -306,7 +306,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
 
 
-            //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+            //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
             bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
 
             //the challenge digest must match the expected
