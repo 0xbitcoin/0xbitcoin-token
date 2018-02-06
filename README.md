@@ -73,12 +73,16 @@ testrpc
 
 truffle test
 
+
+
+
+Contract:
+https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31
  
 ### http://0xbitcoin.org 
  
  
- Compiler: 
-(http://remix.ethereum.org/#optimize=false&version=soljson-v0.4.19+commit.c4cbbb05.js ,.4.19+commit.c4cbbb05.Emscripten.clang )
+ Compiler: .4.19+commit.c4cbbb05.Emscripten.clang )
  
 
  
