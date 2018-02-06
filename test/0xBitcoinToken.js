@@ -114,8 +114,8 @@ it("can be mined", async function () {
   console.log(tokenContract.address)
 
   var test_account= {
-      'address': '0xffec0c5edc777773bb544f35fb88af42d6d8bd57',
-      'privateKey': 'e822068fe9f05fa307b3f08814a5cd508f79a263ae83ad89efa0fea60f2d03e8'
+      'address': '0x9e1e0fe64caf3338081d37e3faecfda10e54c9ec',
+      'privateKey': '11ec18e7945d2812541a429e7cfdad9851889695b397b62374f15b7b3725a318'
   }
 
 
