@@ -74,8 +74,7 @@ testrpc
 truffle test
 
  
-### Published contracts on ROPSTEN
-see http://0xbitcoin.org 
+### http://0xbitcoin.org 
  
  
  Compiler: 
