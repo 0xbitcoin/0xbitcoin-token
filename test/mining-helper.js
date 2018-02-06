@@ -73,6 +73,11 @@ module.exports =  {
 
     console.log('collecting data from smartcontract');
 
+   
+
+    var lastRewardAmountString = await tokenContract.lastRewardAmount.call()  ;
+    var lastRewardAmount = parseInt(lastRewardAmountString)
+
 
     var miningDifficultyString = await tokenContract.getMiningDifficulty.call()  ;
     var miningDifficulty = parseInt(miningDifficultyString)
@@ -82,7 +87,7 @@ module.exports =  {
 
     var challengeNumber = await tokenContract.getChallengeNumber.call() ;
 
-
+    console.log('lastRewardAmount:', lastRewardAmount);
     console.log('difficulty:', miningDifficulty);
     console.log('target:', miningTarget);
     console.log('challenge number:', challengeNumber)

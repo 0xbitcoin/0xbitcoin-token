@@ -350,9 +350,11 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
 
+      //if max supply for the era will be exceeded next reward round then enter the new era before that happens
+
       //40 is the final reward era, almost all tokens minted
       //once the final era is reached, more tokens will not be given out because the assert function
-      if(tokensMinted >= maxSupplyForEra && rewardEra < 39)
+      if( tokensMinted.add(getMiningReward()) > maxSupplyForEra && rewardEra < 39)
       {
         rewardEra = rewardEra + 1;
       }
