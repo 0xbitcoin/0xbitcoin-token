@@ -324,7 +324,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
             //Cannot mint more tokens than there are
-            assert(tokensMinted <= _totalSupply);
+            assert(tokensMinted <= maxSupplyForEra);
 
             //set readonly diagnostics data
             lastRewardTo = msg.sender;
