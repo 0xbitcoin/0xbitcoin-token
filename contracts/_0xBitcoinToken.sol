@@ -206,10 +206,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
 
-      //ethereum block number when last 0xbtc was minted
-  //  uint public latestMiningEpochStarted;
-
-    uint public latestDifficultyPeriodStarted;
+     uint public latestDifficultyPeriodStarted;
 
 
 
@@ -303,29 +300,82 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     }
 
-    function _startNewMiningEpoch() internal {//a new block to be mined
 
-      //latestMiningEpochStarted = block.number;
 
-      if(tokensMinted >= maxSupplyForEra && rewardEra < 32) //32 is the final era, almost all tokens minted
+
+        function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+
+
+            //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+            bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+
+            //the challenge digest must match the expected
+            if (digest != challenge_digest) revert();
+
+            //the digest must be smaller than the target
+            if(uint256(digest) > miningTarget) revert();
+
+
+            //only allow one reward for each challenge
+             bytes32 solution = solutionForChallenge[challengeNumber];
+             solutionForChallenge[challengeNumber] = digest;
+             if(solution != 0x0) revert();  //prevent the same answer from awarding twice
+
+
+            uint reward_amount = getMiningReward();
+
+            balances[msg.sender] = balances[msg.sender].add(reward_amount);
+
+            tokensMinted = tokensMinted.add(reward_amount);
+
+
+            //Cannot mint more tokens than there are
+            assert(tokensMinted <= _totalSupply);
+
+            //set readonly diagnostics data
+            lastRewardTo = msg.sender;
+            lastRewardAmount = reward_amount;
+            lastRewardEthBlockNumber = block.number;
+
+
+             _startNewMiningEpoch();
+
+              Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+
+           return true;
+
+        }
+
+
+    //a new 'block' to be mined
+    function _startNewMiningEpoch() internal {
+
+      //40 is the final reward era, almost all tokens minted
+      //once the final era is reached, more tokens will not be given out because the assert function
+      if(tokensMinted >= maxSupplyForEra && rewardEra < 39)
       {
         rewardEra = rewardEra + 1;
       }
 
       //set the next minted supply at which the era will change
+      // total supply is 2100000000000000  because of 8 decimal places
       maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
-
-      //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
-      challengeNumber = block.blockhash(block.number - 1);
-
 
       epochCount = epochCount.add(1);
 
-      //every so often, readjust difficulty, dont readjust when deploying
+      //every so often, readjust difficulty. Dont readjust when deploying
       if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
       {
         _reAdjustDifficulty();
       }
+
+
+      //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
+      //do this last since this is a protection mechanism in the mint() function
+      challengeNumber = block.blockhash(block.number - 1);
+
+
+
 
 
 
@@ -342,31 +392,30 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
-
         //assume 360 ethereum blocks per hour
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
         uint epochsMined = _BLOCKS_PER_READJUSTMENT; //256
 
-        uint targetEthBlocksPerEpoch = epochsMined * 60; //should be 60 times slower than ethereum
+        uint targetEthBlocksPerDiffPeriod = epochsMined * 60; //should be 60 times slower than ethereum
 
         //if there were less eth blocks passed in time than expected
-        if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerEpoch )
+        if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerDiffPeriod )
         {
-          uint excess_block_pct = (targetEthBlocksPerEpoch.mul(100)).div( ethBlocksSinceLastDifficultyPeriod );
+          uint excess_block_pct = (targetEthBlocksPerDiffPeriod.mul(100)).div( ethBlocksSinceLastDifficultyPeriod );
 
           uint excess_block_pct_extra = excess_block_pct.sub(100).limitLessThan(1000);
           // If there were 5% more blocks mined than expected then this is 5.  If there were 100% more blocks mined than expected then this is 100.
 
           //make it harder
-          miningTarget = miningTarget.sub(miningTarget.div(2000).mul(excess_block_pct_extra));
+          miningTarget = miningTarget.sub(miningTarget.div(2000).mul(excess_block_pct_extra));   //by up to 50 %
         }else{
-          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod.mul(100)).div( targetEthBlocksPerEpoch );
+          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod.mul(100)).div( targetEthBlocksPerDiffPeriod );
 
           uint shortage_block_pct_extra = shortage_block_pct.sub(100).limitLessThan(1000); //always between 0 and 1000
 
           //make it easier
-          miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));
+          miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));   //by up to 50 %
         }
 
 
@@ -384,71 +433,6 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         }
     }
 
-
-    function getMintDigest(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number) public returns (bytes32 digesttest) {
-
-        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
-
-        return digest;
-
-      }
-
-      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public returns (bool success) {
-
-          uint reward_amount = getMiningReward();
-
-          bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
-
-          //bytes memory characters = bytes(digest);
-
-          if(uint256(digest) > testTarget) revert();
-
-          return (digest == challenge_digest);
-
-        }
-
-
-    function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
-
-      //  uint difficulty = getMiningDifficulty();
-        uint reward_amount = getMiningReward();
-
-        //the PoW must contain work that includes a recent etherum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-        bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
-
-        //the challenge digest must match the expected
-        if (digest != challenge_digest) revert();
-
-        //the digest must be smaller than the target
-        if(uint256(digest) > miningTarget) revert();
-
-
-        //only allow one reward for each challenge
-         bytes32 solution = solutionForChallenge[challengeNumber];
-         solutionForChallenge[challengeNumber] = digest;
-         if(solution != 0x0) revert();  //prevent the same answer from awarding twice
-
-
-
-        balances[msg.sender] = balances[msg.sender].add(reward_amount);
-
-
-        tokensMinted = tokensMinted.add(reward_amount);
-
-
-        //set readonly diagnostics data
-        lastRewardTo = msg.sender;
-        lastRewardAmount = reward_amount;
-        lastRewardEthBlockNumber = block.number;
-
-
-         _startNewMiningEpoch();
-
-          Mint(msg.sender, reward_amount, epochCount, challengeNumber );
-
-       return true;
-
-    }
 
     //this is a recent ethreum block hash, used to prevent pre-mining future blocks
     function getChallengeNumber() public constant returns (bytes32) {
@@ -476,6 +460,26 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
          return (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
 
     }
+
+    //help debug mining software
+    function getMintDigest(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number) public view returns (bytes32 digesttest) {
+
+        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+
+        return digest;
+
+      }
+
+        //help debug mining software
+      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
+
+          bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+
+          if(uint256(digest) > testTarget) revert();
+
+          return (digest == challenge_digest);
+
+        }
 
 
 
