@@ -65,13 +65,6 @@ https://github.com/0xbitcoin/0xbitcoin-miner
 
 
  
- 
-## HOW TO TEST
-
-npm install -g ethereumjs-testrpc  (https://github.com/ethereumjs/testrpc)
-testrpc
-
-truffle test
 
 
 
@@ -81,6 +74,16 @@ https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31
  
 ### http://0xbitcoin.org 
  
+ 
+ 
+ 
+ 
+## HOW TO TEST
+
+npm install -g ethereumjs-testrpc  (https://github.com/ethereumjs/testrpc)
+testrpc
+
+truffle test
  
  Compiler: .4.19+commit.c4cbbb05.Emscripten.clang )
  
