@@ -5,6 +5,8 @@ pragma solidity ^0.4.18;
 
 // '0xBitcoin Token' contract
 
+// Mineable ERC20 Token using Proof Of Work
+
 //
 
 // Symbol      : 0xBTC
