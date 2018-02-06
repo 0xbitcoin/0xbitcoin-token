@@ -76,9 +76,9 @@ https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31
  
  
  
+ ----------
  
- 
-## HOW TO TEST
+#### HOW TO TEST
 
 npm install -g ethereumjs-testrpc  (https://github.com/ethereumjs/testrpc)
 testrpc
