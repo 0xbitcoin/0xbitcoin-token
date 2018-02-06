@@ -228,7 +228,6 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
 
     uint public miningTarget;
-  //  uint public miningDifficulty; //adjusts every 2016 epochs (or blocks)
 
     bytes32 public challengeNumber;   //generate a new one when a new reward is minted
 
@@ -245,19 +244,13 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     bool locked = false;
 
     mapping(bytes32 => bytes32) solutionForChallenge;
-    //mapping(bytes32 => uint) rewardHashesFound; //the hash and the nonce
 
     uint public tokensMinted;
 
     mapping(address => uint) balances;
 
 
-
-
-
     mapping(address => mapping(address => uint)) allowed;
-
-
 
 
     event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
@@ -295,9 +288,8 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
         _startNewMiningEpoch();
 
 
-
+        //The owner gets nothing! You must mine this ERC20 token
         //balances[owner] = _totalSupply;
-
         //Transfer(address(0), owner, _totalSupply);
 
     }
@@ -438,7 +430,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
     }
 
 
-    //this is a recent ethreum block hash, used to prevent pre-mining future blocks
+    //this is a recent ethereum block hash, used to prevent pre-mining future blocks
     function getChallengeNumber() public constant returns (bytes32) {
         return challengeNumber;
     }
