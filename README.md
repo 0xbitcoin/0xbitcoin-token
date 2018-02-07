@@ -1,6 +1,6 @@
  
  ## 0xBitcoin 
- [deployed on mainnet](https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31)
+ [Deployed on Ethereum](https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31)
  
 ![0xbitcoin_small](https://user-images.githubusercontent.com/36060731/35717032-b47d34d0-07aa-11e8-9d1a-48dafbbb2ca0.png)
 
