@@ -72,7 +72,7 @@ https://github.com/0xbitcoin/0xbitcoin-miner
 
 
 ### Transfer ERC20 Tokens 
-https://tokenfactory.surge.sh/#/token/0xb6ed7644c69416d67b522e20bc294a9a9b405b31
+https://0xbitcoin.org/wallet
  
  
  
