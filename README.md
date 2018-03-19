@@ -81,7 +81,7 @@ https://0xbitcoin.org/wallet
 #### HOW TO TEST
 
 Deployed on Ropsten: 
-0x56b497ccf0dc858bb49ad820e99d6f29bcb2c1c7473b788d8ac8d7df1b87376d
+0x935E3740ead33fd74f3906a7d599791153e5918F
 
 npm install -g ethereumjs-testrpc  (https://github.com/ethereumjs/testrpc)
 testrpc
