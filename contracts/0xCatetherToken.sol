@@ -24,23 +24,20 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
 
-     uint public latestDifficultyPeriodStarted;
+    uint public latestDifficultyPeriodStarted;
+    uint public latestDifficultyTimeStamp;
 
 
 
     uint public epochCount;//number of 'blocks' mined
 
-
-    uint public _BLOCKS_PER_READJUSTMENT = 1024;
-
-
     //a little number
     uint public  _MINIMUM_TARGET = 2**16;
 
 
-      //a big number is easier ; just find a solution that is smaller
+    //a big number is easier ; just find a solution that is smaller
     //uint public  _MAXIMUM_TARGET = 2**224;  bitcoin uses 224
-    uint public  _MAXIMUM_TARGET = 2**234;
+    uint public  _MAXIMUM_TARGET = 2**232;
 
 
     uint public miningTarget;
@@ -48,20 +45,16 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     bytes32 public challengeNumber;   //generate a new one when a new reward is minted
 
 
-
-    uint public rewardEra;
-    uint public maxSupplyForEra;
-
-
     address public lastRewardTo;
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber;
 
-    bool locked = false;
-
+    // a bunch of maps to know where this is going (pun intended)
+    
     mapping(bytes32 => bytes32) solutionForChallenge;
-
-    uint public tokensMinted;
+    mapping(uint => uint) difficultyForEpoch;
+    mapping(uint => uint) blockHeightForEpoch;
+    mapping(uint => uint) timeStampForEpoch;
 
     mapping(address => uint) balances;
 
@@ -77,27 +70,19 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     // ------------------------------------------------------------------------
 
-    function _0xCatetherToken() public onlyOwner{
-
-
+    constructor() public{
 
         symbol = "0xCATE";
 
         name = "0xCatether Token";
 
         decimals = 8;
-
-        _totalSupply = 21000000 * 10**uint(decimals);
-
-        if(locked) revert();
-        locked = true;
-
-        tokensMinted = 0;
-
-        rewardEra = 0;
-        maxSupplyForEra = _totalSupply.div(2);
+        epochCount = 0;
+        _totalSupply = 0;
 
         miningTarget = _MAXIMUM_TARGET;
+        challengeNumber = "GENESIS_BLOCK";
+        solutionForChallenge[challengeNumber] = "Yes, this is the Genesis block.";
 
         latestDifficultyPeriodStarted = block.number;
 
@@ -107,7 +92,6 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         //The owner gets nothing! You must mine this ERC20 token
         //balances[owner] = _totalSupply;
         //Transfer(address(0), owner, _totalSupply);
-
     }
 
 
@@ -132,25 +116,20 @@ contract _0xCatetherToken is ERC20Interface, Owned {
              if(solution != 0x0) revert();  //prevent the same answer from awarding twice
 
 
-            uint reward_amount = getMiningReward();
+            uint reward_amount = getMiningReward(digest);
 
             balances[msg.sender] = balances[msg.sender].add(reward_amount);
 
-            tokensMinted = tokensMinted.add(reward_amount);
-
-
-            //Cannot mint more tokens than there are
-            assert(tokensMinted <= maxSupplyForEra);
+            _totalSupply = _totalSupply.add(reward_amount);
 
             //set readonly diagnostics data
             lastRewardTo = msg.sender;
             lastRewardAmount = reward_amount;
             lastRewardEthBlockNumber = block.number;
 
-
              _startNewMiningEpoch();
 
-              Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+              emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
 
            return true;
 
@@ -159,79 +138,57 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
-
-      //if max supply for the era will be exceeded next reward round then enter the new era before that happens
-
-      //40 is the final reward era, almost all tokens minted
-      //once the final era is reached, more tokens will not be given out because the assert function
-      if( tokensMinted.add(getMiningReward()) > maxSupplyForEra && rewardEra < 39)
-      {
-        rewardEra = rewardEra + 1;
-      }
-
-      //set the next minted supply at which the era will change
-      // total supply is 2100000000000000  because of 8 decimal places
-      maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
-
-      epochCount = epochCount.add(1);
-
-      //every so often, readjust difficulty. Dont readjust when deploying
-      if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
-      {
+        
+        blockHeightForEpoch[epochCount] = block.number;
+        timeStampForEpoch[epochCount] = block.timestamp;
+        difficultyForEpoch[epochCount] = miningTarget;
+        epochCount = epochCount.add(1);
+    
+      //Difficulty adjustment following the DigiChieldv3 implementation (Tempered-SMA)
+      // Allows more thorough protection against multi-pool hash attacks
+      // https://github.com/zawy12/difficulty-algorithms/issues/9
         _reAdjustDifficulty();
-      }
 
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       //do this last since this is a protection mechanism in the mint() function
-      challengeNumber = block.blockhash(block.number - 1);
-
-
-
-
-
+      challengeNumber = blockhash(block.number - 1);
 
     }
 
 
 
 
-    //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
-    //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
-
-    //readjust the target by 5 percent
+    //https://github.com/zawy12/difficulty-algorithms/issues/9
+    //readjust the target via a tempered SMA
     function _reAdjustDifficulty() internal {
-
-
-        uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
-        //assume 360 ethereum blocks per hour
-
-        //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xCatether epoch
-        uint epochsMined = _BLOCKS_PER_READJUSTMENT; //256
-
-        uint targetEthBlocksPerDiffPeriod = epochsMined * 60; //should be 60 times slower than ethereum
-
-        //if there were less eth blocks passed in time than expected
-        if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerDiffPeriod )
-        {
-          uint excess_block_pct = (targetEthBlocksPerDiffPeriod.mul(100)).div( ethBlocksSinceLastDifficultyPeriod );
-
-          uint excess_block_pct_extra = excess_block_pct.sub(100).limitLessThan(1000);
-          // If there were 5% more blocks mined than expected then this is 5.  If there were 100% more blocks mined than expected then this is 100.
-
-          //make it harder
-          miningTarget = miningTarget.sub(miningTarget.div(2000).mul(excess_block_pct_extra));   //by up to 50 %
-        }else{
-          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod.mul(100)).div( targetEthBlocksPerDiffPeriod );
-
-          uint shortage_block_pct_extra = shortage_block_pct.sub(100).limitLessThan(1000); //always between 0 and 1000
-
-          //make it easier
-          miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));   //by up to 50 %
+        
+        //we want miners to spend 1 minutes to mine each 'block'
+        //for that, we need to approximate as closely as possible the current difficulty, by averaging the 28 last difficulties,
+        // compared to the average time it took to mine each block.
+        // also, since we can't really do that if we don't even have 28 mined blocks, difficulty will not move until we reach that number.
+        
+        uint timeTarget = 60;
+        
+        if(epochCount>28) {
+            // counter, difficulty-sum, solve-time-sum, solvetime
+            uint i = 0;
+            uint sumD = 0;
+            uint sumST = 0;  // the first calculation of the timestamp difference can be negative, but it's not that bad (see below)
+            uint solvetime;
+            
+            for(i=epochCount.sub(28); i<epochCount; i++){
+                sumD = sumD.add(difficultyForEpoch[i]);
+                solvetime = timeStampForEpoch[i] - timeStampForEpoch[i-1];
+                if (solvetime > timeTarget.mul(7)) {solvetime = timeTarget.mul(7); }
+                //if (solvetime < timeTarget.mul(-6)) {solvetime = timeTarget.mul(-6); }    Ethereum EVM doesn't allow for a timestamp that make time go "backwards" anyway, so, we're good
+                sumST += solvetime;                                                   //    (block.timestamp is an uint256 => negative = very very long time, thus rejected by the network)
+                // we don't use safeAdd because in sore rare cases, it can underflow. However, the EVM structure WILL make it overflow right after, thus giving a correct SumST after a few loops
+            }
+            sumST = sumST.mul(10000).div(2523).add(1260); // 1260 seconds is a 75% weighing on what should be the actual time to mine 28 blocks.
+            miningTarget = sumD.mul(60).div(sumST); //We add it to the actual time it took with a weighted average (tempering)
         }
-
-
-
+        
         latestDifficultyPeriodStarted = block.number;
 
         if(miningTarget < _MINIMUM_TARGET) //very difficult
@@ -243,6 +200,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         {
           miningTarget = _MAXIMUM_TARGET;
         }
+        difficultyForEpoch[epochCount] = miningTarget;
     }
 
 
@@ -262,18 +220,22 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
 
-    //21m coins total
-    //reward begins at 50 and is cut in half every reward era (as tokens are mined)
-    function getMiningReward() public constant returns (uint) {
-        //once we get half way thru the coins, only get 25 per block
-
-         //every reward era, the reward amount halves.
-
-         return (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
+    //There's no limit to the coin supply
+    //reward follows the same emmission rate as Dogecoins'
+    function getMiningReward(bytes32 digest) public constant returns (uint) {
+        
+        if(epochCount > 600000) return (10000 * 10**uint(decimals) );
+        if(epochCount > 500000) return (15625 * 10**uint(decimals) );
+        if(epochCount > 400000) return (31250 * 10**uint(decimals) );
+        if(epochCount > 300000) return (62500 * 10**uint(decimals) );
+        if(epochCount > 200000) return (125000 * 10**uint(decimals) );
+        if(epochCount > 145000) return (250000 * 10**uint(decimals) );
+        if(epochCount > 100000) return ((uint256(keccak256(digest, blockhash(block.number - 2))) % 500000) * 10**uint(decimals) );
+        return ( (uint256(keccak256(digest, blockhash(block.number - 2))) % 1000000) * 10**uint(decimals) );
 
     }
 
-    //help debug mining software
+    //help debug mining software (even though challenge_digest isn't used, this function is constant and helps troubleshooting mining issues)
     function getMintDigest(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number) public view returns (bytes32 digesttest) {
 
         bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
@@ -339,7 +301,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
         balances[to] = balances[to].add(tokens);
 
-        Transfer(msg.sender, to, tokens);
+        emit Transfer(msg.sender, to, tokens);
 
         return true;
 
@@ -367,7 +329,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
         allowed[msg.sender][spender] = tokens;
 
-        Approval(msg.sender, spender, tokens);
+        emit Approval(msg.sender, spender, tokens);
 
         return true;
 
@@ -401,7 +363,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
         balances[to] = balances[to].add(tokens);
 
-        Transfer(from, to, tokens);
+        emit Transfer(from, to, tokens);
 
         return true;
 
@@ -439,7 +401,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
         allowed[msg.sender][spender] = tokens;
 
-        Approval(msg.sender, spender, tokens);
+        emit Approval(msg.sender, spender, tokens);
 
         ApproveAndCallFallBack(spender).receiveApproval(msg.sender, tokens, this, data);
 
