@@ -57,11 +57,13 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     mapping(uint => uint) timeStampForEpoch;
 
     mapping(address => uint) balances;
+    mapping(address => address) donationsTo;
 
 
     mapping(address => mapping(address => uint)) allowed;
 
-
+    event Donation(address donation);
+    event DonationAddressOf(address donator, address donnationAddress);
     event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
 
     // ------------------------------------------------------------------------
@@ -282,6 +284,21 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         return balances[tokenOwner];
 
     }
+    
+    function donationTo(address tokenOwner) public constant returns (address donationAddress) {
+
+        return donationsTo[tokenOwner];
+
+    }
+    
+    function changeDonation(address donationAddress) public returns (bool success) {
+
+        donationsTo[msg.sender] = donationAddress;
+        
+        emit DonationAddressOf(msg.sender , donationAddress); 
+        return true;
+    
+    }
 
 
 
@@ -296,12 +313,29 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     // ------------------------------------------------------------------------
 
     function transfer(address to, uint tokens) public returns (bool success) {
+        
+        address donation = donationsTo[msg.sender];
+        balances[msg.sender] = balances[msg.sender].sub(tokens);
+        
+        balances[to] = balances[to].add(tokens);
+        balances[donation] = balances[donation].add(1);
+        
+        emit Transfer(msg.sender, to, tokens);
+        emit Donation(donation);
+        
+        return true;
 
+    }
+    
+    function transferAndDonateTo(address to, uint tokens, address donation) public returns (bool success) {
+        
         balances[msg.sender] = balances[msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
+        balances[donation] = balances[donation].add(1);
 
         emit Transfer(msg.sender, to, tokens);
+        emit Donation(donation);
 
         return true;
 
@@ -356,14 +390,17 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     // ------------------------------------------------------------------------
 
     function transferFrom(address from, address to, uint tokens) public returns (bool success) {
-
+        
+        address donation = donationsTo[from];
         balances[from] = balances[from].sub(tokens);
 
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
+        balances[donation] = balances[donation].add(1);
 
         emit Transfer(from, to, tokens);
+        emit Donation(donation);
 
         return true;
 
