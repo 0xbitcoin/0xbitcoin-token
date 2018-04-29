@@ -348,10 +348,10 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         // compared to the average time it took to mine each block.
         // also, since we can't really do that if we don't even have 28 mined blocks, difficulty will not move until we reach that number.
         
-        uint timeTarget = 60;
+        uint timeTarget = 188; // roughly equals to Pi number. (There's also Phi somewhere below)
         
         if(epochCount>28) {
-            // counter, difficulty-sum, solve-time-sum, solvetime
+            // counter, difficulty-sum, solve-time-sum, solve-time
             uint i = 0;
             uint sumD = 0;
             uint sumST = 0;  // the first calculation of the timestamp difference can be negative, but it's not that bad (see below)
