@@ -8,7 +8,7 @@ pragma solidity ^0.4.23;
 
 //
 
-// Symbol      : 0xBTC
+// Symbol      : 0xCATE
 
 // Name        : 0xCatether Token
 
@@ -207,8 +207,6 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
     uint public latestDifficultyPeriodStarted;
-    uint public latestDifficultyTimeStamp;
-
 
 
     uint public epochCount;//number of 'blocks' mined
@@ -234,9 +232,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     // a bunch of maps to know where this is going (pun intended)
     
     mapping(bytes32 => bytes32) solutionForChallenge;
-    mapping(uint => uint) difficultyForEpoch;
-    mapping(uint => uint) blockHeightForEpoch;
-    mapping(uint => uint) timeStampForEpoch;
+    mapping(uint => uint) targetForEpoch;
 
     mapping(address => uint) balances;
     mapping(address => address) donationsTo;
@@ -323,9 +319,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
         
-        blockHeightForEpoch[epochCount] = block.number;
-        timeStampForEpoch[epochCount] = block.timestamp;
-        difficultyForEpoch[epochCount] = miningTarget;
+        targetForEpoch[epochCount] = miningTarget;
         epochCount = epochCount.add(1);
     
       //Difficulty adjustment following the DigiChieldv3 implementation (Tempered-SMA)
