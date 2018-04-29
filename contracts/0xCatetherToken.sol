@@ -1,5 +1,3 @@
-pragma solidity ^0.4.23;
-
 // ----------------------------------------------------------------------------
 
 // ERC20 Token, with the addition of symbol, name and decimals and an
@@ -25,8 +23,6 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
     uint public latestDifficultyPeriodStarted;
-    uint public latestDifficultyTimeStamp;
-
 
 
     uint public epochCount;//number of 'blocks' mined
@@ -51,10 +47,9 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     // a bunch of maps to know where this is going (pun intended)
     
-    mapping(bytes32 => bytes32) solutionForChallenge;
-    mapping(uint => uint) difficultyForEpoch;
-    mapping(uint => uint) blockHeightForEpoch;
-    mapping(uint => uint) timeStampForEpoch;
+    mapping(bytes32 => bytes32) public solutionForChallenge;
+    mapping(uint => uint) public timeStampForEpoch;
+    mapping(uint => uint) public targetForEpoch;
 
     mapping(address => uint) balances;
     mapping(address => address) donationsTo;
@@ -141,9 +136,8 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
         
-        blockHeightForEpoch[epochCount] = block.number;
+        targetForEpoch[epochCount] = miningTarget;
         timeStampForEpoch[epochCount] = block.timestamp;
-        difficultyForEpoch[epochCount] = miningTarget;
         epochCount = epochCount.add(1);
     
       //Difficulty adjustment following the DigiChieldv3 implementation (Tempered-SMA)
@@ -170,17 +164,17 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         // compared to the average time it took to mine each block.
         // also, since we can't really do that if we don't even have 28 mined blocks, difficulty will not move until we reach that number.
         
-        uint timeTarget = 60;
+        uint timeTarget = 188; // roughly equals to Pi number. (There's also Phi somewhere below)
         
         if(epochCount>28) {
-            // counter, difficulty-sum, solve-time-sum, solvetime
+            // counter, difficulty-sum, solve-time-sum, solve-time
             uint i = 0;
             uint sumD = 0;
             uint sumST = 0;  // the first calculation of the timestamp difference can be negative, but it's not that bad (see below)
             uint solvetime;
             
             for(i=epochCount.sub(28); i<epochCount; i++){
-                sumD = sumD.add(difficultyForEpoch[i]);
+                sumD = sumD.add(targetForEpoch[i]);
                 solvetime = timeStampForEpoch[i] - timeStampForEpoch[i-1];
                 if (solvetime > timeTarget.mul(7)) {solvetime = timeTarget.mul(7); }
                 //if (solvetime < timeTarget.mul(-6)) {solvetime = timeTarget.mul(-6); }    Ethereum EVM doesn't allow for a timestamp that make time go "backwards" anyway, so, we're good
@@ -202,7 +196,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         {
           miningTarget = _MAXIMUM_TARGET;
         }
-        difficultyForEpoch[epochCount] = miningTarget;
+        targetForEpoch[epochCount] = miningTarget;
     }
 
 
@@ -226,14 +220,14 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     //reward follows the same emmission rate as Dogecoins'
     function getMiningReward(bytes32 digest) public constant returns (uint) {
         
-        if(epochCount > 600000) return (10000 * 10**uint(decimals) );
-        if(epochCount > 500000) return (15625 * 10**uint(decimals) );
-        if(epochCount > 400000) return (31250 * 10**uint(decimals) );
-        if(epochCount > 300000) return (62500 * 10**uint(decimals) );
-        if(epochCount > 200000) return (125000 * 10**uint(decimals) );
-        if(epochCount > 145000) return (250000 * 10**uint(decimals) );
-        if(epochCount > 100000) return ((uint256(keccak256(digest, blockhash(block.number - 2))) % 500000) * 10**uint(decimals) );
-        return ( (uint256(keccak256(digest, blockhash(block.number - 2))) % 1000000) * 10**uint(decimals) );
+        if(epochCount > 600000) return (30000 * 10**uint(decimals) );
+        if(epochCount > 500000) return (46875 * 10**uint(decimals) );
+        if(epochCount > 400000) return (93750 * 10**uint(decimals) );
+        if(epochCount > 300000) return (187500 * 10**uint(decimals) );
+        if(epochCount > 200000) return (375000 * 10**uint(decimals) );
+        if(epochCount > 145000) return (500000 * 10**uint(decimals) );
+        if(epochCount > 100000) return ((uint256(keccak256(digest, blockhash(block.number - 2))) % 1500000) * 10**uint(decimals) );
+        return ( (uint256(keccak256(digest, blockhash(block.number - 2))) % 3000000) * 10**uint(decimals) );
 
     }
 
@@ -318,7 +312,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         balances[msg.sender] = balances[msg.sender].sub(tokens);
         
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
         
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -332,7 +326,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         balances[msg.sender] = balances[msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
 
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -397,7 +391,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
 
         emit Transfer(from, to, tokens);
         emit Donation(donation);
