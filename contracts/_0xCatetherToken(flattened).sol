@@ -12,7 +12,7 @@ pragma solidity ^0.4.23;
 
 // Name        : 0xCatether Token
 
-// Total supply: 21,000,000.00
+// Total supply: No Limit
 
 // Decimals    : 8
 
@@ -231,8 +231,9 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     // a bunch of maps to know where this is going (pun intended)
     
-    mapping(bytes32 => bytes32) solutionForChallenge;
-    mapping(uint => uint) targetForEpoch;
+    mapping(bytes32 => bytes32) public solutionForChallenge;
+    mapping(uint => uint) public timeStampForEpoch;
+    mapping(uint => uint) public targetForEpoch;
 
     mapping(address => uint) balances;
     mapping(address => address) donationsTo;
@@ -320,6 +321,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     function _startNewMiningEpoch() internal {
         
         targetForEpoch[epochCount] = miningTarget;
+        timeStampForEpoch[epochCount] = block.timestamp;
         epochCount = epochCount.add(1);
     
       //Difficulty adjustment following the DigiChieldv3 implementation (Tempered-SMA)
@@ -356,7 +358,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
             uint solvetime;
             
             for(i=epochCount.sub(28); i<epochCount; i++){
-                sumD = sumD.add(difficultyForEpoch[i]);
+                sumD = sumD.add(targetForEpoch[i]);
                 solvetime = timeStampForEpoch[i] - timeStampForEpoch[i-1];
                 if (solvetime > timeTarget.mul(7)) {solvetime = timeTarget.mul(7); }
                 //if (solvetime < timeTarget.mul(-6)) {solvetime = timeTarget.mul(-6); }    Ethereum EVM doesn't allow for a timestamp that make time go "backwards" anyway, so, we're good
@@ -378,7 +380,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         {
           miningTarget = _MAXIMUM_TARGET;
         }
-        difficultyForEpoch[epochCount] = miningTarget;
+        targetForEpoch[epochCount] = miningTarget;
     }
 
 
