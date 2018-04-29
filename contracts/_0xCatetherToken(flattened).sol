@@ -496,7 +496,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         balances[msg.sender] = balances[msg.sender].sub(tokens);
         
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
         
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -510,7 +510,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         balances[msg.sender] = balances[msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
 
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -575,7 +575,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(1);
+        balances[donation] = balances[donation].add(161803400);
 
         emit Transfer(from, to, tokens);
         emit Donation(donation);
