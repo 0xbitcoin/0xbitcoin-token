@@ -217,7 +217,7 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     //a big number is easier ; just find a solution that is smaller
     //uint public  _MAXIMUM_TARGET = 2**224;  bitcoin uses 224
-    uint public  _MAXIMUM_TARGET = 2**232;
+    uint public  _MAXIMUM_TARGET = 2**224;
 
 
     uint public miningTarget;
