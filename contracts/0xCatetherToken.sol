@@ -1,76 +1,44 @@
+pragma solidity ^0.4.23;
 // ----------------------------------------------------------------------------
-
 // ERC20 Token, with the addition of symbol, name and decimals and an
-
 // initial fixed supply
-
 // ----------------------------------------------------------------------------
-
-contract _0xCatetherToken is ERC20Interface, Owned {
-
+contract _0xCatetherToken is ERC20Interface, EIP918Interface, Owned {
     using SafeMath for uint;
     using ExtendedMath for uint;
-
-
     string public symbol;
-
     string public  name;
-
     uint8 public decimals;
-
     uint public _totalSupply;
-
-
-
     uint public latestDifficultyPeriodStarted;
-
-
     uint public epochCount;//number of 'blocks' mined
-
     //a little number
     uint public  _MINIMUM_TARGET = 2**16;
-
-
     //a big number is easier ; just find a solution that is smaller
     //uint public  _MAXIMUM_TARGET = 2**224;  bitcoin uses 224
     uint public  _MAXIMUM_TARGET = 2**224;
-
-
     uint public miningTarget;
-
     bytes32 public challengeNumber;   //generate a new one when a new reward is minted
-
-
     address public lastRewardTo;
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber;
-
     // a bunch of maps to know where this is going (pun intended)
     
     mapping(bytes32 => bytes32) solutionForChallenge;
     mapping(uint => uint) targetForEpoch;
     mapping(uint => uint) timeStampForEpoch;
-
     mapping(address => uint) balances;
     mapping(address => address) donationsTo;
-
-
     mapping(address => mapping(address => uint)) allowed;
-
     event Donation(address donation);
     event DonationAddressOf(address donator, address donnationAddress);
     event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
 
     // ------------------------------------------------------------------------
-
     // Constructor
-
     // ------------------------------------------------------------------------
-
     constructor() public{
-
         symbol = "0xCATE";
-        
         name = "0xCatether Token";
         
         decimals = 4;
@@ -91,46 +59,28 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         emit Transfer(address(0), owner, _totalSupply);
     }
 
-
-
-
-        function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
-
-            //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-            bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
-
-            //the challenge digest must match the expected
-            if (digest != challenge_digest) revert();
-
-            //the digest must be smaller than the target
-            if(uint256(digest) > miningTarget) revert();
-
-
-            //only allow one reward for each challenge
-            bytes32 solution = solutionForChallenge[challenge_digest];
-            solutionForChallenge[challengeNumber] = digest;
-            if(solution != 0x0) revert();  //prevent the same answer from awarding twice
-
-
-            uint reward_amount = getMiningReward(digest);
-
-            balances[msg.sender] = balances[msg.sender].add(reward_amount);
-
-            _totalSupply = _totalSupply.add(reward_amount);
-
-            //set readonly diagnostics data
-            lastRewardTo = msg.sender;
-            lastRewardAmount = reward_amount;
-            lastRewardEthBlockNumber = block.number;
-
-            _startNewMiningEpoch();
-
-            emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
-
-           return true;
-
-        }
-
+    function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+        //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
+        bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+        //the challenge digest must match the expected
+        if (digest != challenge_digest) revert();
+        //the digest must be smaller than the target
+        if(uint256(digest) > miningTarget) revert();
+        //only allow one reward for each challenge
+        bytes32 solution = solutionForChallenge[challenge_digest];
+        solutionForChallenge[challengeNumber] = digest;
+        if(solution != 0x0) revert();  //prevent the same answer from awarding twice
+        uint reward_amount = getMiningReward();
+        balances[msg.sender] = balances[msg.sender].add(reward_amount);
+        _totalSupply = _totalSupply.add(reward_amount);
+        //set readonly diagnostics data
+        lastRewardTo = msg.sender;
+        lastRewardAmount = reward_amount;
+        lastRewardEthBlockNumber = block.number;
+        _startNewMiningEpoch();
+        emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+       return true;
+    }
 
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
@@ -142,15 +92,10 @@ contract _0xCatetherToken is ERC20Interface, Owned {
       // Allows more thorough protection against multi-pool hash attacks
       // https://github.com/zawy12/difficulty-algorithms/issues/9
         miningTarget = _reAdjustDifficulty(epochCount);
-
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       //do this last since this is a protection mechanism in the mint() function
       challengeNumber = blockhash(block.number - 1);
-
     }
-
-
-
 
     //https://github.com/zawy12/difficulty-algorithms/issues/21
     //readjust the target via a tempered EMA
@@ -166,7 +111,6 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         return targetForEpoch[epoch];
     }
 
-
     //this is a recent ethereum block hash, used to prevent pre-mining future blocks
     function getChallengeNumber() public constant returns (bytes32) {
         return challengeNumber;
@@ -179,14 +123,12 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     function getMiningTarget() public constant returns (uint) {
        return targetForEpoch[epochCount];
-   }
-
-
+    }
 
     //There's no limit to the coin supply
     //reward follows more or less the same emmission rate as Dogecoins'. 5 minutes per block / 105120 block in one year (roughly)
-    function getMiningReward(bytes32 digest) public constant returns (uint) {
-        
+    function getMiningReward() public constant returns (uint) {
+        bytes32 digest = solutionForChallenge[challengeNumber];
         if(epochCount > 160000) return (50000   * 10**uint(decimals) );                                   //  14.4 M/day / ~ 1.0B Tokens in 20'000 blocks (coin supply @100'000th block ~ 150 Billions)
         if(epochCount > 140000) return (75000   * 10**uint(decimals) );                                   //  21.6 M/day / ~ 1.5B Tokens in 20'000 blocks (coin supply @100'000th block ~ 149 Billions)
         if(epochCount > 120000) return (125000  * 10**uint(decimals) );                                  //  36.0 M/day / ~ 2.5B Tokens in 20'000 blocks (coin supply @100'000th block ~ 146 Billions)
@@ -196,65 +138,40 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         if(epochCount > 40000) return  ((uint256(keccak256(digest)) % 2500000) * 10**uint(decimals) );   // 360.0 M/day / ~25.0B Tokens in 20'000 blocks (coin supply @ 40'000th block ~  86 Billions)
         if(epochCount > 20000) return  ((uint256(keccak256(digest)) % 3500000) * 10**uint(decimals) );   // 504.0 M/day / ~35.0B Tokens in 20'000 blocks (coin supply @ 20'000th block ~  51 Billions)
                                return  ((uint256(keccak256(digest)) % 5000000) * 10**uint(decimals) );                         // 720.0 M/day / ~50.0B Tokens in 20'000 blocks 
-
     }
 
     //help debug mining software (even though challenge_digest isn't used, this function is constant and helps troubleshooting mining issues)
     function getMintDigest(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number) public view returns (bytes32 digesttest) {
-
         bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
-
         return digest;
-
-      }
-
-        //help debug mining software
-      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
-
-          bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
-
-          if(uint256(digest) > testTarget) revert();
-
-          return (digest == challenge_digest);
-
-        }
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Total supply
-
-    // ------------------------------------------------------------------------
-
-    function totalSupply() public constant returns (uint) {
-
-        return _totalSupply  - balances[address(0)];
-
     }
 
-
+    //help debug mining software
+    function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
+      bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+      if(uint256(digest) > testTarget) revert();
+      return (digest == challenge_digest);
+    }
 
     // ------------------------------------------------------------------------
+    // Total supply
+    // ------------------------------------------------------------------------
+    function totalSupply() public constant returns (uint) {
+        return _totalSupply  - balances[address(0)];
+    }
 
+    // ------------------------------------------------------------------------
     // Get the token balance for account `tokenOwner`
-
     // ------------------------------------------------------------------------
-
     function balanceOf(address tokenOwner) public constant returns (uint balance) {
-
         return balances[tokenOwner];
-
     }
     
     function donationTo(address tokenOwner) public constant returns (address donationAddress) {
-
         return donationsTo[tokenOwner];
-
     }
     
     function changeDonation(address donationAddress) public returns (bool success) {
-
         donationsTo[msg.sender] = donationAddress;
         
         emit DonationAddressOf(msg.sender , donationAddress); 
@@ -262,18 +179,11 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     
     }
 
-
-
     // ------------------------------------------------------------------------
-
     // Transfer the balance from token owner's account to `to` account
-
     // - Owner's account must have sufficient balance to transfer
-
     // - 0 value transfers are allowed
-
     // ------------------------------------------------------------------------
-
     function transfer(address to, uint tokens) public returns (bool success) {
         
         address donation = donationsTo[msg.sender];
@@ -286,155 +196,84 @@ contract _0xCatetherToken is ERC20Interface, Owned {
         emit Donation(donation);
         
         return true;
-
     }
     
     function transferAndDonateTo(address to, uint tokens, address donation) public returns (bool success) {
         
         balances[msg.sender] = (balances[msg.sender].sub(tokens)).add(5000); // 0.5 CATE for the sender
-
         balances[to] = balances[to].add(tokens);
         balances[donation] = balances[donation].add(5000); // 0.5 CATE for the sender's specified donation address
-
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
-
         return true;
-
     }
-
-
-
     // ------------------------------------------------------------------------
-
     // Token owner can approve for `spender` to transferFrom(...) `tokens`
-
     // from the token owner's account
-
     //
-
     // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
-
     // recommends that there are no checks for the approval double-spend attack
-
     // as this should be implemented in user interfaces
-
     // ------------------------------------------------------------------------
-
     function approve(address spender, uint tokens) public returns (bool success) {
-
         allowed[msg.sender][spender] = tokens;
-
         emit Approval(msg.sender, spender, tokens);
-
         return true;
-
     }
 
-
-
     // ------------------------------------------------------------------------
-
     // Transfer `tokens` from the `from` account to the `to` account
-
     //
-
     // The calling account must already have sufficient tokens approve(...)-d
-
     // for spending from the `from` account and
-
     // - From account must have sufficient balance to transfer
-
     // - Spender must have sufficient allowance to transfer
-
     // - 0 value transfers are allowed
-
     // ------------------------------------------------------------------------
-
     function transferFrom(address from, address to, uint tokens) public returns (bool success) {
         
         address donation = donationsTo[msg.sender]; // when you make a transfer for someone, you choose to whom the reward goes to
         balances[from] = balances[from].sub(tokens);
-
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
-
         balances[to] = balances[to].add(tokens);
         balances[donation] = balances[donation].add(5000);     // 0.5 CATE for the sender's donation address
         balances[msg.sender] = balances[msg.sender].add(5000); // 0.5 CATE for the sender
-
         emit Transfer(from, to, tokens);
         emit Donation(donation);
-
         return true;
-
     }
 
-
-
     // ------------------------------------------------------------------------
-
     // Returns the amount of tokens approved by the owner that can be
-
     // transferred to the spender's account
-
     // ------------------------------------------------------------------------
-
     function allowance(address tokenOwner, address spender) public constant returns (uint remaining) {
-
         return allowed[tokenOwner][spender];
-
     }
 
-
-
     // ------------------------------------------------------------------------
-
     // Token owner can approve for `spender` to transferFrom(...) `tokens`
-
     // from the token owner's account. The `spender` contract function
-
     // `receiveApproval(...)` is then executed
-
     // ------------------------------------------------------------------------
-
     function approveAndCall(address spender, uint tokens, bytes data) public returns (bool success) {
-
         allowed[msg.sender][spender] = tokens;
-
         emit Approval(msg.sender, spender, tokens);
-
         ApproveAndCallFallBack(spender).receiveApproval(msg.sender, tokens, this, data);
-
         return true;
-
     }
 
-
-
     // ------------------------------------------------------------------------
-
     // Don't accept ETH
-
     // ------------------------------------------------------------------------
-
     function () public payable {
-
         revert();
-
     }
-
-
-
+    
     // ------------------------------------------------------------------------
-
     // Owner can transfer out any accidentally sent ERC20 tokens
-
     // ------------------------------------------------------------------------
-
     function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
-
         return ERC20Interface(tokenAddress).transfer(owner, tokens);
-
     }
-
 }
