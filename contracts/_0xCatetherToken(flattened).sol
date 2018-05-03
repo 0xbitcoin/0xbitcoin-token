@@ -231,9 +231,9 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     // a bunch of maps to know where this is going (pun intended)
     
-    mapping(bytes32 => bytes32) public solutionForChallenge;
-    mapping(uint => uint) public timeStampForEpoch;
-    mapping(uint => uint) public targetForEpoch;
+    mapping(bytes32 => bytes32) solutionForChallenge;
+    mapping(uint => uint) targetForEpoch;
+    mapping(uint => uint) timeStampForEpoch;
 
     mapping(address => uint) balances;
     mapping(address => address) donationsTo;
@@ -254,32 +254,31 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     constructor() public{
 
         symbol = "0xCATE";
-
+        
         name = "0xCatether Token";
-
-        decimals = 8;
+        
+        decimals = 4;
         epochCount = 0;
-        _totalSupply = 0;
-
-        miningTarget = _MAXIMUM_TARGET;
+        _totalSupply = 1337000000*10**uint(decimals); 
+        
+        targetForEpoch[epochCount] = _MAXIMUM_TARGET;
         challengeNumber = "GENESIS_BLOCK";
-        solutionForChallenge[challengeNumber] = "Yes, this is the Genesis block.";
-
+        solutionForChallenge[challengeNumber] = "42"; // ahah yes
+        timeStampForEpoch[epochCount] = block.timestamp;
         latestDifficultyPeriodStarted = block.number;
-
-        _startNewMiningEpoch();
-
-
-        //The owner gets nothing! You must mine this ERC20 token
-        //balances[owner] = _totalSupply;
-        //Transfer(address(0), owner, _totalSupply);
+        
+        epochCount = epochCount.add(1);
+        targetForEpoch[epochCount] = _MAXIMUM_TARGET;
+        miningTarget = _MAXIMUM_TARGET;
+        
+        balances[owner] = _totalSupply;
+        emit Transfer(address(0), owner, _totalSupply);
     }
 
 
 
 
         function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
-
 
             //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
             bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
@@ -292,9 +291,9 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
             //only allow one reward for each challenge
-             bytes32 solution = solutionForChallenge[challengeNumber];
-             solutionForChallenge[challengeNumber] = digest;
-             if(solution != 0x0) revert();  //prevent the same answer from awarding twice
+            bytes32 solution = solutionForChallenge[challenge_digest];
+            solutionForChallenge[challengeNumber] = digest;
+            if(solution != 0x0) revert();  //prevent the same answer from awarding twice
 
 
             uint reward_amount = getMiningReward(digest);
@@ -308,9 +307,9 @@ contract _0xCatetherToken is ERC20Interface, Owned {
             lastRewardAmount = reward_amount;
             lastRewardEthBlockNumber = block.number;
 
-             _startNewMiningEpoch();
+            _startNewMiningEpoch();
 
-              emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+            emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
 
            return true;
 
@@ -320,15 +319,13 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     //a new 'block' to be mined
     function _startNewMiningEpoch() internal {
         
-        targetForEpoch[epochCount] = miningTarget;
         timeStampForEpoch[epochCount] = block.timestamp;
         epochCount = epochCount.add(1);
     
       //Difficulty adjustment following the DigiChieldv3 implementation (Tempered-SMA)
       // Allows more thorough protection against multi-pool hash attacks
       // https://github.com/zawy12/difficulty-algorithms/issues/9
-        _reAdjustDifficulty();
-
+        miningTarget = _reAdjustDifficulty(epochCount);
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       //do this last since this is a protection mechanism in the mint() function
@@ -339,48 +336,18 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
 
 
-    //https://github.com/zawy12/difficulty-algorithms/issues/9
-    //readjust the target via a tempered SMA
-    function _reAdjustDifficulty() internal {
-        
-        //we want miners to spend 1 minutes to mine each 'block'
-        //for that, we need to approximate as closely as possible the current difficulty, by averaging the 28 last difficulties,
-        // compared to the average time it took to mine each block.
-        // also, since we can't really do that if we don't even have 28 mined blocks, difficulty will not move until we reach that number.
-        
-        uint timeTarget = 188; // roughly equals to Pi number. (There's also Phi somewhere below)
-        
-        if(epochCount>28) {
-            // counter, difficulty-sum, solve-time-sum, solve-time
-            uint i = 0;
-            uint sumD = 0;
-            uint sumST = 0;  // the first calculation of the timestamp difference can be negative, but it's not that bad (see below)
-            uint solvetime;
-            
-            for(i=epochCount.sub(28); i<epochCount; i++){
-                sumD = sumD.add(targetForEpoch[i]);
-                solvetime = timeStampForEpoch[i] - timeStampForEpoch[i-1];
-                if (solvetime > timeTarget.mul(7)) {solvetime = timeTarget.mul(7); }
-                //if (solvetime < timeTarget.mul(-6)) {solvetime = timeTarget.mul(-6); }    Ethereum EVM doesn't allow for a timestamp that make time go "backwards" anyway, so, we're good
-                sumST += solvetime;                                                   //    (block.timestamp is an uint256 => negative = very very long time, thus rejected by the network)
-                // we don't use safeAdd because in sore rare cases, it can underflow. However, the EVM structure WILL make it overflow right after, thus giving a correct SumST after a few loops
-            }
-            sumST = sumST.mul(10000).div(2523).add(1260); // 1260 seconds is a 75% weighing on what should be the actual time to mine 28 blocks.
-            miningTarget = sumD.mul(60).div(sumST); //We add it to the actual time it took with a weighted average (tempering)
-        }
-        
+    //https://github.com/zawy12/difficulty-algorithms/issues/21
+    //readjust the target via a tempered EMA
+    function _reAdjustDifficulty(uint epoch) internal returns (uint) {
+    
+        uint timeTarget = 300;  // We want miners to spend 5 minutes to mine each 'block'
+        uint N = 6180;          //N = 1000*n, ratio between timeTarget and windowTime (31-ish minutes)
+                                // (Ethereum doesn't handle floating point numbers very well)
+        uint elapsedTime = timeStampForEpoch[epoch.sub(1)] - timeStampForEpoch[epoch.sub(2)];
+        targetForEpoch[epoch] = (targetForEpoch[epoch.sub(1)] * 10000) / (6180 + 3920*N/( N - 984 + 1000*elapsedTime/timeTarget) );
+        //              newTarget   =   Tampered EMA-retarget on the last 6 blocks (a bit more, it's an approximation)
         latestDifficultyPeriodStarted = block.number;
-
-        if(miningTarget < _MINIMUM_TARGET) //very difficult
-        {
-          miningTarget = _MINIMUM_TARGET;
-        }
-
-        if(miningTarget > _MAXIMUM_TARGET) //very easy
-        {
-          miningTarget = _MAXIMUM_TARGET;
-        }
-        targetForEpoch[epochCount] = miningTarget;
+        return targetForEpoch[epoch];
     }
 
 
@@ -391,27 +358,28 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     //the number of zeroes the digest of the PoW solution requires.  Auto adjusts
      function getMiningDifficulty() public constant returns (uint) {
-        return _MAXIMUM_TARGET.div(miningTarget);
+        return _MAXIMUM_TARGET.div(targetForEpoch[epochCount]);
     }
 
     function getMiningTarget() public constant returns (uint) {
-       return miningTarget;
+       return targetForEpoch[epochCount];
    }
 
 
 
     //There's no limit to the coin supply
-    //reward follows the same emmission rate as Dogecoins'
+    //reward follows more or less the same emmission rate as Dogecoins'. 5 minutes per block / 105120 block in one year (roughly)
     function getMiningReward(bytes32 digest) public constant returns (uint) {
         
-        if(epochCount > 600000) return (30000 * 10**uint(decimals) );
-        if(epochCount > 500000) return (46875 * 10**uint(decimals) );
-        if(epochCount > 400000) return (93750 * 10**uint(decimals) );
-        if(epochCount > 300000) return (187500 * 10**uint(decimals) );
-        if(epochCount > 200000) return (375000 * 10**uint(decimals) );
-        if(epochCount > 145000) return (500000 * 10**uint(decimals) );
-        if(epochCount > 100000) return ((uint256(keccak256(digest, blockhash(block.number - 2))) % 1500000) * 10**uint(decimals) );
-        return ( (uint256(keccak256(digest, blockhash(block.number - 2))) % 3000000) * 10**uint(decimals) );
+        if(epochCount > 160000) return (50000   * 10**uint(decimals) );                                   //  14.4 M/day / ~ 1.0B Tokens in 20'000 blocks (coin supply @100'000th block ~ 150 Billions)
+        if(epochCount > 140000) return (75000   * 10**uint(decimals) );                                   //  21.6 M/day / ~ 1.5B Tokens in 20'000 blocks (coin supply @100'000th block ~ 149 Billions)
+        if(epochCount > 120000) return (125000  * 10**uint(decimals) );                                  //  36.0 M/day / ~ 2.5B Tokens in 20'000 blocks (coin supply @100'000th block ~ 146 Billions)
+        if(epochCount > 100000) return (250000  * 10**uint(decimals) );                                  //  72.0 M/day / ~ 5.0B Tokens in 20'000 blocks (coin supply @100'000th block ~ 141 Billions) (~ 1 year elapsed)
+        if(epochCount > 80000) return  (500000  * 10**uint(decimals) );                                   // 144.0 M/day / ~10.0B Tokens in 20'000 blocks (coin supply @ 80'000th block ~ 131 Billions)
+        if(epochCount > 60000) return  (1000000 * 10**uint(decimals) );                                  // 288.0 M/day / ~20.0B Tokens in 20'000 blocks (coin supply @ 60'000th block ~ 111 Billions)
+        if(epochCount > 40000) return  ((uint256(keccak256(digest)) % 2500000) * 10**uint(decimals) );   // 360.0 M/day / ~25.0B Tokens in 20'000 blocks (coin supply @ 40'000th block ~  86 Billions)
+        if(epochCount > 20000) return  ((uint256(keccak256(digest)) % 3500000) * 10**uint(decimals) );   // 504.0 M/day / ~35.0B Tokens in 20'000 blocks (coin supply @ 20'000th block ~  51 Billions)
+                               return  ((uint256(keccak256(digest)) % 5000000) * 10**uint(decimals) );                         // 720.0 M/day / ~50.0B Tokens in 20'000 blocks 
 
     }
 
@@ -493,10 +461,10 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     function transfer(address to, uint tokens) public returns (bool success) {
         
         address donation = donationsTo[msg.sender];
-        balances[msg.sender] = balances[msg.sender].sub(tokens);
+        balances[msg.sender] = (balances[msg.sender].sub(tokens)).add(5000); // 0.5 CATE for the sender
         
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(161803400);
+        balances[donation] = balances[donation].add(5000); // 0.5 CATE for the sender's donation address
         
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -507,10 +475,10 @@ contract _0xCatetherToken is ERC20Interface, Owned {
     
     function transferAndDonateTo(address to, uint tokens, address donation) public returns (bool success) {
         
-        balances[msg.sender] = balances[msg.sender].sub(tokens);
+        balances[msg.sender] = (balances[msg.sender].sub(tokens)).add(5000); // 0.5 CATE for the sender
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(161803400);
+        balances[donation] = balances[donation].add(5000); // 0.5 CATE for the sender's specified donation address
 
         emit Transfer(msg.sender, to, tokens);
         emit Donation(donation);
@@ -569,13 +537,14 @@ contract _0xCatetherToken is ERC20Interface, Owned {
 
     function transferFrom(address from, address to, uint tokens) public returns (bool success) {
         
-        address donation = donationsTo[from];
+        address donation = donationsTo[msg.sender]; // when you make a transfer for someone, you choose to whom the reward goes to
         balances[from] = balances[from].sub(tokens);
 
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
 
         balances[to] = balances[to].add(tokens);
-        balances[donation] = balances[donation].add(161803400);
+        balances[donation] = balances[donation].add(5000);     // 0.5 CATE for the sender's donation address
+        balances[msg.sender] = balances[msg.sender].add(5000); // 0.5 CATE for the sender
 
         emit Transfer(from, to, tokens);
         emit Donation(donation);
