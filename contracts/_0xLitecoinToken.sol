@@ -11,7 +11,8 @@ pragma solidity ^0.4.18;
 
 /*
 
-the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol to call mint() and then mergeMint() in the same transaction
+the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol 
+to call mint() and then mergeMint() in the same transaction
 
 */
 
@@ -379,7 +380,8 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
         function mergeMint() public returns (bool success) {
 
-            // the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol to call mint() and then mergeMint() in the same transaction
+            // the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol 
+            // to call mint() and then mergeMint() in the same transaction
 
 
 
