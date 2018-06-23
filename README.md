@@ -1,15 +1,19 @@
  
- ## 0xBitcoin 
+ ## 0xLitecoin 
  [Deployed on Ethereum](https://etherscan.io/address/0xb6ed7644c69416d67b522e20bc294a9a9b405b31)
  
 ![0xbitcoin_small](https://user-images.githubusercontent.com/36060731/35717032-b47d34d0-07aa-11e8-9d1a-48dafbbb2ca0.png)
+
+
+This is intended to be the first Merge-Mined token as a proof of concept for new merge mined tokens, and as the creation of a non-forgable, scarce, digital asset powered by the Ethereum blockchain.
+
 
  
  #### An ERC20 token that is mined using PoW through a SmartContract 
   
   * No pre-mine 
   * No ICO
-  * 21,000,000 tokens total
+  * 4*21,000,000 tokens total
   * Difficulty target auto-adjusts with PoW hashrate
   * Rewards decrease as more tokens are minted 
   * Compatible with all services that support ERC20 tokens

@@ -13,7 +13,7 @@ pragma solidity ^0.4.18;
 
 // Name        : 0xLitecoin Token
 
-// Total supply: 21,000,000.00
+// Total supply: 4*21,000,000.00
 
 // Decimals    : 8
 
@@ -236,14 +236,13 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
     uint public epochCount;//number of 'blocks' mined
 
 
-    // the goal is for 0xLitecoin to be mined 4 times less often as 0xBTC, which is the opposite
-    // goal of Litecoin to be mined 4 times more frequently than 0xBitcoin
+    // the goal is for 0xLitecoin to be mined with 0xBTC
 
-    uint public _BLOCKS_PER_READJUSTMENT = 1024 / 4;
+    uint public _BLOCKS_PER_READJUSTMENT = 1024;
 
 
     //a little number
-    uint public  _MINIMUM_TARGET = 2**16;
+    uint public  _MINIMUM_TARGET = 2**16; // TODO increase this before deploying
 
 
       //a big number is easier ; just find a solution that is smaller
