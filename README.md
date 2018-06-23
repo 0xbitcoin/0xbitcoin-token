@@ -7,6 +7,7 @@
 
 This is intended to be the first Merge-Mined token as a proof of concept for new merge mined tokens, and as the creation of a non-forgable, scarce, digital asset powered by the Ethereum blockchain.
 
+the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol to call mint() and then mergeMint() in the same transaction
 
  
  #### An ERC20 token that is mined using PoW through a SmartContract 

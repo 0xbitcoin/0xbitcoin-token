@@ -7,6 +7,14 @@ pragma solidity ^0.4.18;
 
 // Mineable ERC20 Token using Proof Of Work
 
+
+
+/*
+
+the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol to call mint() and then mergeMint() in the same transaction
+
+*/
+
 //
 
 // Symbol      : 0xLTC
@@ -370,6 +378,11 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
 
         function mergeMint() public returns (bool success) {
+
+            // the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol to call mint() and then mergeMint() in the same transaction
+
+
+
             // hard code a reference to the "Parent" ERC918 Contract ( in this case 0xBitcoin)
             // Verify that the Parent contract was minted in this block, by the same person calling this contract
             // then followthrough with the resulting mint logic
