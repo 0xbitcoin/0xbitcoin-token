@@ -378,7 +378,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
 
 
-        function mergeMint() public returns (bool success) {
+        function merge() public returns (bool success) {
 
             // the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol 
             // to call mint() and then mergeMint() in the same transaction
@@ -488,8 +488,8 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
 
 
-    //https://en.bitcoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
-    //as of 2017 the bitcoin difficulty was up to 17 zeroes, it was only 8 in the early days
+    //https://en.Litecoin.it/wiki/Difficulty#What_is_the_formula_for_difficulty.3F
+    //as of 2017 the Litecoin difficulty was up to 17 zeroes, it was only 8 in the early days
 
     //readjust the target by 5 percent
     function _reAdjustDifficulty() internal {
@@ -498,7 +498,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
         //assume 360 ethereum blocks per hour
 
-        //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
+        //we want miners to spend 15 minutes to mine each 'block', about 60 ethereum blocks = one 0xLitecoin epoch = one 0xBitcoin
         uint epochsMined = _BLOCKS_PER_READJUSTMENT; //256
 
         uint targetEthBlocksPerDiffPeriod = epochsMined * 60; //should be 60 times slower than ethereum
