@@ -313,7 +313,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
         rewardEra = 0;
         maxSupplyForEra = _totalSupply.div(2);
 
-        miningTarget = _MAXIMUM_TARGET;
+        miningTarget = 27938697607979437428382017032425071986904332731688489302005732; // from 0xBitcoin as of block 5902249
 
         latestDifficultyPeriodStarted = block.number;
 
