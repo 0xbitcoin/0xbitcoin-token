@@ -11,8 +11,8 @@ pragma solidity ^0.4.18;
 
 /*
 
-the idea is that the miner uses https://github.com/0xbitcoin/mint-helper/blob/master/contracts/MintHelper.sol 
-to call mint() and then mergeMint() in the same transaction
+the idea is that the miner uses proxyMergeMint in https://github.com/snissn/0xlitecoin-token/blob/master/contracts/MintHelper.sol#L189 
+to call parent::mint() and then this::merge() in the same transaction
 
 */
 
