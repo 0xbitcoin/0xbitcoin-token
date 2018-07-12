@@ -578,7 +578,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
          //every reward era, the reward amount halves.
 
-         return (4*25 * 10**uint(decimals) ).div( 2**rewardEra ) ;
+         return (4*50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
 
     }
 
