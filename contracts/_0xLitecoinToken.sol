@@ -421,6 +421,22 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
             //we have verified that this is the same block as a call to Parent::mint() and that the sender
             // is the sender that has called mint
 
+
+
+             //0xLTC will have the same challenge numbers as 0xBitcoin, this means that mining for one is literally the same process as mining for the other
+             // we want to make sure that one can't use a combination of merge and mint to get two blocks of 0xLTC for each valid nonce, since the same solution 
+             //    applies to each coin
+             // for this reason, we update the solutionForChallenge hashmap with the value of parent::challengeNumber when a solution is merge minted.
+             // when a miner finds a valid solution, if they call this::mint(), without the next few lines of code they can then subsequently use the mint helper and in one transaction
+             //   call parent::mint() this::merge(). the following code will ensure that this::merge() does not give a block reward, because the challenge number will already be set in the 
+             //   solutionForChallenge map
+             //only allow one reward for each challenge based on parent::challengeNumber
+
+             bytes32 public parentChallengeNumber = ERC918Interface(parentAddress).challengeNumber();
+             bytes32 solution = solutionForChallenge[parentChallengeNumber];
+             solutionForChallenge[parentChallengeNumber] = digest;
+             if(solution != 0x0) return false;  //prevent the same answer from awarding twice
+
             //so now we may safely run the relevant logic to give an award to the sender, and update the contract
 
             uint reward_amount = getMiningReward();
