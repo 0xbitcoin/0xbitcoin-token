@@ -431,11 +431,12 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
              //   call parent::mint() this::merge(). the following code will ensure that this::merge() does not give a block reward, because the challenge number will already be set in the 
              //   solutionForChallenge map
              //only allow one reward for each challenge based on parent::challengeNumber
-
-             bytes32 public parentChallengeNumber = ERC918Interface(parentAddress).challengeNumber();
+             bytes32 parentChallengeNumber = ERC918Interface(parentAddress).challengeNumber();
              bytes32 solution = solutionForChallenge[parentChallengeNumber];
-             solutionForChallenge[parentChallengeNumber] = digest;
              if(solution != 0x0) return false;  //prevent the same answer from awarding twice
+             bytes32 digest = 'merge';
+             solutionForChallenge[parentChallengeNumber] = digest;
+
 
             //so now we may safely run the relevant logic to give an award to the sender, and update the contract
 
