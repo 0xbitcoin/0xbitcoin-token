@@ -126,7 +126,7 @@ contract MintHelper is Ownable {
       mintableToken = mToken;
       payoutsWallet = pWallet;
       minterWallet = mWallet;
-      minterFeePercent = 5;
+      minterFeePercent = 6;
     }
 
     function setMintableToken(address mToken)
@@ -241,7 +241,14 @@ contract MintHelper is Ownable {
      return ERC20Interface(_tokenAddr).transfer(dest, value);
     }
 
- 
-
-
+    function multisend(address _tokenAddr, address[] dests, uint256[] values)
+    onlyOwner
+      returns (uint256) {
+        uint256 i = 0;
+        while (i < dests.length) {
+           ERC20(_tokenAddr).transfer(dests[i], values[i]);
+           i += 1;
+        }
+        return (i);
+    }
 }
