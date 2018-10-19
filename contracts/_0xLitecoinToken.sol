@@ -434,8 +434,13 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
              bytes32 parentChallengeNumber = ERC918Interface(parentAddress).challengeNumber();
              bytes32 solution = solutionForChallenge[parentChallengeNumber];
              if(solution != 0x0) return false;  //prevent the same answer from awarding twice
+
+
+
+             //now that we've checked that the next challenge wasn't reused, apply the current 0xLitecoin challenge 
+             //this will prevent the 'previous' challenge from being reused
              bytes32 digest = 'merge';
-             solutionForChallenge[parentChallengeNumber] = digest;
+             solutionForChallenge[challengeNumber] = digest;
 
 
             //so now we may safely run the relevant logic to give an award to the sender, and update the contract
