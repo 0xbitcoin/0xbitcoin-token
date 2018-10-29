@@ -471,9 +471,8 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
             uint total_reward_amount = 0;
             uint reward_amount;
             for (uint i=0; i<merge_mint_ious[caller]; i++) {
-
               reward_amount = getMiningReward();
-              uint total_reward_amount += reward_amount;
+              total_reward_amount += reward_amount;
             }
 
             balances[caller] = balances[caller].add(total_reward_amount);
