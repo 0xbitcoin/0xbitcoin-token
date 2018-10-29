@@ -282,6 +282,10 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
     mapping(address => uint) balances;
 
 
+    mapping(address => uint) merge_mint_ious;
+    mapping(address => uint) merge_mint_payout_threshold;
+
+
     mapping(address => mapping(address => uint)) allowed;
 
 
@@ -436,35 +440,55 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
              if(solution != 0x0) return false;  //prevent the same answer from awarding twice
 
 
-
              //now that we've checked that the next challenge wasn't reused, apply the current 0xLitecoin challenge 
              //this will prevent the 'previous' challenge from being reused
              bytes32 digest = 'merge';
              solutionForChallenge[challengeNumber] = digest;
 
-
-            //so now we may safely run the relevant logic to give an award to the sender, and update the contract
-
-            uint reward_amount = getMiningReward();
-
-            balances[msg.sender] = balances[msg.sender].add(reward_amount);
-
-            tokensMinted = tokensMinted.add(reward_amount);
-
-
-            //Cannot mint more tokens than there are
-            assert(tokensMinted <= maxSupplyForEra);
-
-            //set readonly diagnostics data
-            lastRewardTo = msg.sender;
-            lastRewardAmount = reward_amount;
-            lastRewardEthBlockNumber = block.number;
-
+             merge_mint_ious[msg.sender] +=1;
+             process_merge_mint_ious(msg.sender);
 
              _startNewMiningEpoch();
 
               Mint(msg.sender, reward_amount, epochCount, 0 ); // use 0 to indicate a merge mine
+        }
 
+        function set_merge_mint_threshold(uint threshold ){
+         merge_mint_payout_threshold[msg.sender] = threshold;
+        }
+
+
+
+        //anyone can call this method for anyone, they just pay the gas to get them their tokens
+        function process_merge_mint_ious(address caller){
+          // if there is no value set, assume threshold for payout is one, otherwise act accordingly
+          uint payout_threshold = merge_mint_payout_threshold[caller];
+          if(payout_threshold == 0){ // if the value is null it returns 0, so set it to 1
+            payout_threshold=1;
+          }
+          if(merge_mint_ious[caller] >= payout_threshold){
+
+            uint total_reward_amount = 0;
+            uint reward_amount;
+            for (uint i=0; i<merge_mint_ious[caller]; i++) {
+
+              reward_amount = getMiningReward();
+              uint total_reward_amount += reward_amount;
+            }
+
+            balances[caller] = balances[caller].add(total_reward_amount);
+
+            tokensMinted = tokensMinted.add(total_reward_amount);
+
+            //set readonly diagnostics data
+            lastRewardTo = caller
+            lastRewardAmount = reward_amount;
+            lastRewardEthBlockNumber = block.number;
+
+            }
+
+
+           merge_mint_ious[msg.sender] = 0;
            return true;
 
         }
