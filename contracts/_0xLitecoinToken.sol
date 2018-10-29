@@ -450,7 +450,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
 
              _startNewMiningEpoch();
 
-              Mint(msg.sender, reward_amount, epochCount, 0 ); // use 0 to indicate a merge mine
+              Mint(msg.sender, 0, epochCount, 0 ); // use 0 to indicate a merge mine
         }
 
         function set_merge_mint_threshold(uint threshold ){
@@ -480,7 +480,7 @@ contract _0xLitecoinToken is ERC20Interface, Owned {
             tokensMinted = tokensMinted.add(total_reward_amount);
 
             //set readonly diagnostics data
-            lastRewardTo = caller
+            lastRewardTo = caller;
             lastRewardAmount = reward_amount;
             lastRewardEthBlockNumber = block.number;
 
