@@ -1,16 +1,18 @@
 {
-  "name": "ethergoods",
+  "name": "0xBTC",
   "engines": {
     "node": ">=7.6"
   },
   "version": "0.1.0",
-  "description": "TODO:",
+  "description": "Pure Mined Token in Solidity",
   "main": "truffle.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "truffle test",
+      "ganache": " ganache-cli --account=\"0xdca672104f895219692175d87b04483d31f53af8caad1d7348d269b35e21c3df,100000000000000000000000\" "
+
   },
   "repository": {
     "type": "git",

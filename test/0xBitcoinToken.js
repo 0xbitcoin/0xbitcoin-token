@@ -127,76 +127,64 @@ it("can be mined", async function () {
 
 
 });
-/*
-  assert.equal(10, good_type_record[4].toNumber() ); //check price
-
-  var typeId =  web3utils.toBN(good_type_record[0] );
-
-  console.log("typeId: " + typeId);
-
-  //var result = contract.claimGood(typeId, {value: web3utils.toWei('1')});
-
-  var ethBalance = await web3.eth.getBalance(accounts[0]);
-   console.log("Account 0 has " + ethBalance + " Wei");
-
-//console.log( web3utils.toWei('40','ether').toString() );
-
-var result =   await contract.claimGood(  typeId , function(){} ,{ value:web3utils.toWei('0.00001','ether') })
-
-//web3utils.keccak256(typeId + '|' + instanceId)
-
-  var instanceId = 0;
-  var token_id = await tokenContract.buildTokenId(typeId,instanceId,function(){})
-
-  var token_record = await tokenContract.tokenOwner(token_id);
-
-    console.log('token record ')
-      console.log(token_id)
-  console.log(token_record)*/
-//  assert.equal(true, result );
-//  await contract.claimGood(typeId).send({from: '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe',value: 1000});//,{value: 1000}
-//  var token_record = await contract.goods.call(typeId);
-
-//  assert.equal(true, token_record ); //initialized
-
-
-/*
-it("can bid on the market", async function () {
-
-  var tokenContract = await GoodToken.deployed();
-  var marketContract = await TokenMarket.deployed();
-  var contract = await EtherGoods.deployed();
-
-  await marketContract.setTokenContractAddress(accounts[0],tokenContract);
-  await contract.setMarketContractAddress(accounts[0],marketContract);
-  await contract.setTokenContractAddress(accounts[0],tokenContract);
-  await tokenContract.setMasterContractAddress(accounts[0],contract)
 
 
 
 
 
-}),
+it("transferAnyERC20Token cannot mint tokens ", async function () {
+    networkInterfaceHelper.init(web3,tokenContract,test_account);
+
+
+    //try to mint 1000 tokens as the deployer / owner 
+    var txData = this.web3.eth.abi.encodeFunctionCall({
+            name: 'transferAnyERC20Token',
+            type: 'function',
+            inputs: [{
+                type: 'address',
+                name: 'tokenAddress'
+            },{
+                type: 'uint',
+                name: 'tokens'
+            }]
+        }, [tokenContract.options.address, 1000 * 10^8 ]);
+
+    var txOptions = {
+      nonce: web3Utils.toHex(txCount),
+      gas: web3Utils.toHex(1704624),
+      gasPrice: web3Utils.toHex(2e9), // 2 Gwei
+      to: addressTo,
+      from: addressFrom,
+      data: txData
+    };
+
+    var response = await new Promise(function (result,error) {
+        networkInterfaceHelper.sendSignedRawTransaction( web3,txOptions,test_account.address,test_account, function(err, res) {
+         if (err) error(err)
+           result(res)
+       })
+
+     }
+
+     console.log(response)
+
+     assert.ok( response )
+
+});
 
 
 
 
-  it("can not get supply while supply all taken", async function () {
-      var contract = await EtherGoods.deployed();
-      var balance = await contract.balanceOf.call(accounts[0]);
-      console.log("Pre Balance: " + balance);
-
-      var allAssigned = await contract.allPunksAssigned.call();
-      console.log("All assigned: " + allAssigned);
-      assert.equal(false, allAssigned, "allAssigned should be false to start.");
-      await expectThrow(contract.getPunk(0));
-      var balance = await contract.balanceOf.call(accounts[0]);
-      console.log("Balance after fail: " + balance);
-    });
 
 
 
-  */
+
+
+
+
+
+
+
 });
 
 
