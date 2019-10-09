@@ -437,7 +437,7 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
 
     //   THESE METHODS ARE FOR UNIT TESTING ONLY
     function testSetTokensMinted(uint amount) public    {
-          tokensMinted = amount
+          tokensMinted = amount;
     }
 
 
