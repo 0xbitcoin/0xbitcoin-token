@@ -1,0 +1,10 @@
+/node_modules
+/build
+/build/contracts
+
+/artifacts
+.env
+
+generated/*
+
+*.secret
