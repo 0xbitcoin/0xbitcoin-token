@@ -370,11 +370,6 @@ contract _0xBitcoinToken is ERC20Interface, Owned {
       //do this last since this is a protection mechanism in the mint() function
       challengeNumber = block.blockhash(block.number - 1);
 
-
-
-
-
-
     }
 
 

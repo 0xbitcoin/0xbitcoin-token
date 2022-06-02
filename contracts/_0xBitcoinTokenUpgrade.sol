@@ -305,7 +305,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
     }
 
 
-    //a new 'block' to be mined
+    
     function _startNewMiningEpoch() internal {
 
       //if max supply for the era will be exceeded next reward round then enter the new era before that happens
@@ -404,7 +404,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
      * @dev Deposit original tokens
      * @param amount Amount of original tokens to charge
      */
-    function depositTokens(address from, uint amount) internal returns (bool)
+    function deposit(address from, uint amount) internal returns (bool)
     {
          
         require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
@@ -423,7 +423,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
      * @dev Withdraw original tokens
      * @param amount Amount of original tokens to release
      */
-    function withdrawTokens(uint amount) public returns (bool)
+    function withdraw(uint amount) public returns (bool)
     {
         address from = msg.sender;
          
@@ -640,7 +640,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
         
         require( token == originalTokenContract );
         
-        require( depositTokens(from, tokens) );
+        require( deposit(from, tokens) );
 
         return true;
 

@@ -26,8 +26,7 @@ export const getFunds = async (args: SwapArgs): Promise<void> => {
     ? await args.to.getAddress()
     : args.to
 
-  if (args.tokenSym === 'ETH' || args.tokenSym === 'MATIC') {
-    console.log('SENDING FUNDS ')
+  if (args.tokenSym === 'ETH' || args.tokenSym === 'MATIC') {   
     await funder.sendTransaction({
       to: toAddress,
       value: args.amount,

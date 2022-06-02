@@ -62,9 +62,7 @@ describe('Upgrade Contract', () => {
 
     let minerEth = await miner.getBalance()
 
-    console.log('minerEth',minerEth)
-   // miner = miner.connect(  ethers.provider )
-
+   
     const result = await setup()
     originalTokenContract = result.originalTokenContract
     upgradeTokenContract = result.upgradeTokenContract 
@@ -90,11 +88,7 @@ describe('Upgrade Contract', () => {
 
     it('should deposit and withdraw', async () => { 
 
-
-      let minerEth = await miner.getBalance()
-
-      console.log('minerEth',minerEth)
-
+ 
        
       await originalTokenContract.connect(miner).mintTest()
       let balance = await originalTokenContract.balanceOf(miner.address)
@@ -119,6 +113,13 @@ describe('Upgrade Contract', () => {
       let tokensMinted = await upgradeTokenContract.tokensMinted( )
  
       expect(tokensMinted).to.eql( "30000" )
+
+      await upgradeTokenContract.connect(miner).withdraw( 100 )
+ 
+
+      depositedAmount = await upgradeTokenContract.amountDeposited( )
+ 
+      expect(depositedAmount).to.eql( "8900" )
 
 
   })
