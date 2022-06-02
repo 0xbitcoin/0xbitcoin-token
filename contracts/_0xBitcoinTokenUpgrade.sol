@@ -114,10 +114,10 @@ contract ERC20Interface {
 contract EIP918Interface {
 
   function challengeNumber() external returns (bytes32);
-  function solutionForChallenge(bytes32 challenge) external returns (bytes32);
   function tokensMinted() external returns (uint256);
   function miningTarget() external returns (uint256);
-  function maxSupplyForEra() external returns (uint256);
+  function maxSupplyForEra() external returns (uint256);  
+  function latestDifficultyPeriodStarted() external returns (uint256);
   function rewardEra() external returns (uint256);
   function epochCount() external returns (uint256); 
 
@@ -227,6 +227,9 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
         _totalSupply = 21000000 * 10**uint(decimals);
  
 
+        initialize(); 
+
+
         //You must mine this ERC20 token
         //balances[owner] = _totalSupply;
         //Transfer(address(0), owner, _totalSupply);
@@ -236,12 +239,10 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
 
 
-    function initialize(){
+    function initialize() internal{
 
-      //require that the original contract is not mineable 
-      bytes32 cNumber = EIP918Interface( originalTokenContract  ).challengeNumber();
-      require(  EIP918Interface( originalTokenContract  ).solutionForChallenge(  cNumber ) != 0x0  );
-
+      require(!initialized);
+ 
       epochCount = EIP918Interface( originalTokenContract  ).epochCount();
 
       //set values to pick up where was left off 
@@ -253,8 +254,8 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
       miningTarget = EIP918Interface(originalTokenContract).miningTarget();
 
-      latestDifficultyPeriodStarted = block.number;   
-      challengeNumber = block.blockhash(block.number - 1);
+      latestDifficultyPeriodStarted = EIP918Interface(originalTokenContract).latestDifficultyPeriodStarted();   
+      challengeNumber = EIP918Interface(originalTokenContract).challengeNumber();
       
       initialized = true;
     }
