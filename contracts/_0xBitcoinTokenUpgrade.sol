@@ -205,7 +205,8 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     uint256 public amountDeposited;
 
-    event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
+    event Mint(address from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
+    event Transfer(address from, address to, uint amount);
 
     // ------------------------------------------------------------------------
 
