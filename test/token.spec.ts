@@ -114,12 +114,23 @@ describe('Upgrade Contract', () => {
  
       expect(tokensMinted).to.eql( "30000" )
 
+      expect(await upgradeTokenContract.originalMinedSupply( ))
+      .to.eql( "30000" )
+
+      expect(await upgradeTokenContract.initialized( ))
+      .to.eql( true )
+
       await upgradeTokenContract.connect(miner).withdraw( 100 )
  
 
       depositedAmount = await upgradeTokenContract.amountDeposited( )
  
       expect(depositedAmount).to.eql( "8900" )
+
+
+      let latestDiffStartedAt = await upgradeTokenContract.latestDifficultyPeriodStarted( )
+      expect(latestDiffStartedAt).to.eql( "1001" )
+ 
 
 
   })

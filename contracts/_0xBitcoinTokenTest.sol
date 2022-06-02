@@ -283,7 +283,7 @@ contract _0xBitcoinTokenTest is ERC20Interface, Owned {
 
         miningTarget = _MAXIMUM_TARGET;
 
-        latestDifficultyPeriodStarted = block.number;
+        latestDifficultyPeriodStarted = 1001;
 
         _startNewMiningEpoch(); 
  

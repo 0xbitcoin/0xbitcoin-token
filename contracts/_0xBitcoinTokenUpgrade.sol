@@ -256,7 +256,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
       latestDifficultyPeriodStarted = EIP918Interface(originalTokenContract).latestDifficultyPeriodStarted();   
       challengeNumber = EIP918Interface(originalTokenContract).challengeNumber();
-      
+        
       initialized = true;
     }
 
@@ -275,7 +275,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
 
-        //only allow one reward for each challenge
+        //only allow one reward for each digest
         bool digestUsed = digestUsedForSolution[digest];
         digestUsedForSolution[digest] = true;
         require(digestUsed == false);  //prevent the same answer from awarding twice
