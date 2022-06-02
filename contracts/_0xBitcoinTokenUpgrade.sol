@@ -450,23 +450,23 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     }
 
-    //help debug mining software
-    function getMintDigest(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number) public view returns (bytes32 digesttest) {
+   
+    function getMintDigest(uint256 nonce, address minter, bytes32 challenge_number) public view returns (bytes32 digesttest) {
 
-        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+        bytes32 digest = keccak256(challenge_number,minter,nonce);
 
         return digest;
 
     }
 
-        //help debug mining software
-    function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
+      
+    function checkMintSolution(uint256 nonce, address minter, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
 
-        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+        bytes32 digest = keccak256(challenge_number,minter,nonce);
 
         if(uint256(digest) > testTarget) revert();
 
-        return (digest == challenge_digest);
+        return true;
 
     }
 
