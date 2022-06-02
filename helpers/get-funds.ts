@@ -17,7 +17,7 @@ export const getFunds = async (args: SwapArgs): Promise<void> => {
   const { getNamedSigner, ethers, contracts, network } = args.hre
 
   const forkingNetworkName = process.env.FORKING_NETWORK
-  const funder = await getNamedSigner('deployer')
+  const funder = await getNamedSigner('funder')
   //const { all: tokenAddresses } = getTokens(args.hre.network)
 
   let routerAddress: string
@@ -27,6 +27,7 @@ export const getFunds = async (args: SwapArgs): Promise<void> => {
     : args.to
 
   if (args.tokenSym === 'ETH' || args.tokenSym === 'MATIC') {
+    console.log('SENDING FUNDS ')
     await funder.sendTransaction({
       to: toAddress,
       value: args.amount,

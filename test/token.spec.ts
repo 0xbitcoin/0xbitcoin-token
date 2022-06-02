@@ -30,8 +30,10 @@ const setup = deployments.createFixture<SetupReturn, SetupOptions>(
       keepExistingDeployments: false,
     })
 
-    const originalTokenContract = await hre.contracts.get<XBitcoinTokenTest>('_0xBitcoinTokenTest')
-    const upgradeTokenContract = await hre.contracts.get<XBitcoinTokenUpgrade>('_0xBitcoinTokenUpgrade')
+    const originalTokenContract = await hre.contracts
+    .get<XBitcoinTokenTest>('_0xBitcoinTokenTest')
+    const upgradeTokenContract = await hre.contracts
+    .get<XBitcoinTokenUpgrade>('_0xBitcoinTokenUpgrade')
    
         
       
@@ -53,10 +55,14 @@ describe('Upgrade Contract', () => {
  
   let miner: Wallet  
 
-  beforeEach(async () => {
+  before(async () => {
 
 
-    miner = await createAndFundRandomWallet()
+    miner = await createAndFundRandomWallet( ethers.provider )
+
+    let minerEth = await miner.getBalance()
+
+    console.log('minerEth',minerEth)
    // miner = miner.connect(  ethers.provider )
 
     const result = await setup()
@@ -72,13 +78,50 @@ describe('Upgrade Contract', () => {
     it('should initialize', async () => { 
 
        
-        let hasInitialized = await upgradeTokenContract.initialized()
+        let hasInitialized = await upgradeTokenContract
+        .initialized()
 
         hasInitialized.should.eql(true)
            
  
  
     })
+
+
+    it('should deposit and withdraw', async () => { 
+
+
+      let minerEth = await miner.getBalance()
+
+      console.log('minerEth',minerEth)
+
+       
+      await originalTokenContract.connect(miner).mintTest()
+      let balance = await originalTokenContract.balanceOf(miner.address)
+ 
+      expect(balance).to.eql( "5000000000" )
+
+      await originalTokenContract.connect(miner).approveAndCall(upgradeTokenContract.address, 9000, "0x")
+
+      let upgradeBalance = await upgradeTokenContract.balanceOf(miner.address)
+ 
+      expect(upgradeBalance).to.eql( "9000" )
+
+      let depositedAmount = await upgradeTokenContract.amountDeposited( )
+ 
+      expect(depositedAmount).to.eql( "9000" )
+
+
+      let totalSupply = await upgradeTokenContract.totalSupply( )
+ 
+      expect(totalSupply).to.eql( "2100000000000000" )
+
+      let tokensMinted = await upgradeTokenContract.tokensMinted( )
+ 
+      expect(tokensMinted).to.eql( "30000" )
+
+
+  })
 
      
   

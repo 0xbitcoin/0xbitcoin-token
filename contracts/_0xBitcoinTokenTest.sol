@@ -261,7 +261,7 @@ contract _0xBitcoinTokenTest is ERC20Interface, Owned {
 
     // ------------------------------------------------------------------------
 
-    function _0xBitcoinToken() public onlyOwner{
+    function _0xBitcoinTokenTest() public onlyOwner{
 
 
 
@@ -276,7 +276,7 @@ contract _0xBitcoinTokenTest is ERC20Interface, Owned {
         if(locked) revert();
         locked = true;
 
-        tokensMinted = 0;
+        tokensMinted = 30000;
 
         rewardEra = 0;
         maxSupplyForEra = _totalSupply.div(2);
@@ -285,32 +285,32 @@ contract _0xBitcoinTokenTest is ERC20Interface, Owned {
 
         latestDifficultyPeriodStarted = block.number;
 
-        _startNewMiningEpoch();
- 
-        solutionForChallenge[challengeNumber] = bytes32(1);
+        _startNewMiningEpoch(); 
  
     }
 
-
-
-
         function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+            mintTest();        
+        }
+
+
+        function mintTest() public returns (bool success) {
 
 
             //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-            bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
+            bytes32 digest =  keccak256(challengeNumber, msg.sender, 0 );
 
             //the challenge digest must match the expected
-            if (digest != challenge_digest) revert();
+            //if (digest != challenge_digest) revert();
 
             //the digest must be smaller than the target
-            if(uint256(digest) > miningTarget) revert();
+            //if(uint256(digest) > miningTarget) revert();
 
 
             //only allow one reward for each challenge
              bytes32 solution = solutionForChallenge[challengeNumber];
              solutionForChallenge[challengeNumber] = digest;
-             if(solution != 0x0) revert();  //prevent the same answer from awarding twice
+             //if(solution != 0x0) revert();  //prevent the same answer from awarding twice
 
 
             uint reward_amount = getMiningReward();
@@ -321,7 +321,7 @@ contract _0xBitcoinTokenTest is ERC20Interface, Owned {
 
 
             //Cannot mint more tokens than there are
-            assert(tokensMinted <= maxSupplyForEra);
+            //assert(tokensMinted <= maxSupplyForEra);
 
             //set readonly diagnostics data
             lastRewardTo = msg.sender;

@@ -167,7 +167,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     string public symbol;
 
-    string public  name;
+    string public name;
 
     uint8 public decimals;
 
@@ -192,7 +192,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber; 
 
-    mapping(bytes32 => bool) digestUsedForSolution;
+    mapping(bytes32 => bool) public digestUsedForSolution;
 
     uint public tokensMinted;    
 
@@ -401,7 +401,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
      /**
      *  
-     * @dev Deposit original tokens, receive proxy tokens 
+     * @dev Deposit original tokens
      * @param amount Amount of original tokens to charge
      */
     function depositTokens(address from, uint amount) internal returns (bool)
@@ -409,8 +409,8 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
          
         require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
             
-        balances[from] += amount  ;
-        amountDeposited += amount;
+        balances[from] = balances[from].add(amount);
+        amountDeposited = amountDeposited.add(amount);
         
         Transfer(address(this), from, amount);
         
@@ -420,15 +420,15 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
 
     /**
-     * @dev Withdraw original tokens, dissipate proxy tokens 
+     * @dev Withdraw original tokens
      * @param amount Amount of original tokens to release
      */
     function withdrawTokens(uint amount) public returns (bool)
     {
         address from = msg.sender;
          
-        balances[from] -= amount;
-        amountDeposited -=  amount;
+        balances[from] = balances[from].sub(amount);
+        amountDeposited = amountDeposited.sub(amount);
         
         Transfer( from, address(this), amount);
             

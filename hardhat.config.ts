@@ -226,9 +226,8 @@ export default <HardhatUserConfig>{
     deployer: {
       default: 0, // here this will by default take the first account as deployer
     },
-    vendor: 1,
-    customer: 2,
-    customer2: 3
+    funder: 1,
+    miner: 2 
    
   },
 
