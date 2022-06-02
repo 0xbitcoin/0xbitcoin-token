@@ -111,7 +111,7 @@ contract ERC20Interface {
 }
 
 
-function EIP918Interface {
+contract EIP918Interface {
 
   function challengeNumber() external returns (bytes32);
   function solutionForChallenge(bytes32 challenge) external returns (bytes32);
@@ -159,7 +159,7 @@ contract ApproveAndCallFallBack {
 
 // ----------------------------------------------------------------------------
 
-contract _0xBitcoinUpgrade is ERC20Interface {
+contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     using SafeMath for uint;
     using ExtendedMath for uint;
@@ -192,15 +192,18 @@ contract _0xBitcoinUpgrade is ERC20Interface {
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber; 
 
-    mapping(bytes32 => bytes32) solutionForChallenge;
+    mapping(bytes32 => bool) digestUsedForSolution;
 
     uint public tokensMinted;    
 
     mapping(address => uint) balances;   
     mapping(address => mapping(address => uint)) allowed;
 
-    address public originalTokenContract;
+    address public originalTokenContract; 
+    uint256 public originalMinedSupply;  
     bool public initialized; 
+
+    uint256 public amountDeposited;
 
     event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
 
@@ -224,7 +227,7 @@ contract _0xBitcoinUpgrade is ERC20Interface {
         _totalSupply = 21000000 * 10**uint(decimals);
  
 
-        //The owner gets nothing! You must mine this ERC20 token
+        //You must mine this ERC20 token
         //balances[owner] = _totalSupply;
         //Transfer(address(0), owner, _totalSupply);
 
@@ -236,68 +239,65 @@ contract _0xBitcoinUpgrade is ERC20Interface {
     function initialize(){
 
       //require that the original contract is not mineable 
-      bytes32 cNumber = EIP918Interface( originalTokenContract  ).challengeNumber;
-      require(  EIP918Interface( originalTokenContract  ).solutionForChallenge(  cNumber ) != 0x0  ,  "Original token must be non-mineable." );
+      bytes32 cNumber = EIP918Interface( originalTokenContract  ).challengeNumber();
+      require(  EIP918Interface( originalTokenContract  ).solutionForChallenge(  cNumber ) != 0x0  );
 
-      epochCount = EIP918Interface( originalTokenContract  ).epochCount;
+      epochCount = EIP918Interface( originalTokenContract  ).epochCount();
 
       //set values to pick up where was left off 
-      tokensMinted = EIP918Interface( originalTokenContract  ).tokensMinted;
+      tokensMinted = EIP918Interface( originalTokenContract  ).tokensMinted();
+      originalMinedSupply = tokensMinted;
 
       rewardEra = EIP918Interface(originalTokenContract).rewardEra();
       maxSupplyForEra = EIP918Interface(originalTokenContract).maxSupplyForEra();
 
       miningTarget = EIP918Interface(originalTokenContract).miningTarget();
 
-      latestDifficultyPeriodStarted = block.number;
-   
+      latestDifficultyPeriodStarted = block.number;   
       challengeNumber = block.blockhash(block.number - 1);
       
       initialized = true;
     }
 
 
-
-
     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+        return mintTo(nonce,msg.sender);
+    }
+
+    function mintTo(uint256 nonce, address minter) public returns (bool success) {
         
-        require(initialized == true, "Contract must be initialized");
+        require(initialized);
 
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-        bytes32 digest =  keccak256(challengeNumber, msg.sender, nonce );
-
-        //the challenge digest must match the expected
-        if (digest != challenge_digest) revert();
+        bytes32 digest = keccak256(challengeNumber, minter, nonce );
 
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
 
-
         //only allow one reward for each challenge
-          bytes32 solution = solutionForChallenge[challengeNumber];
-          solutionForChallenge[challengeNumber] = digest;
-          if(solution != 0x0) revert();  //prevent the same answer from awarding twice
-
+        bool digestUsed = digestUsedForSolution[digest];
+        digestUsedForSolution[digest] = true;
+        require(digestUsed == false);  //prevent the same answer from awarding twice
 
         uint reward_amount = getMiningReward();
 
-        balances[msg.sender] = balances[msg.sender].add(reward_amount);
+        balances[minter] = balances[minter].add(reward_amount);
+        Transfer(address(this), minter, reward_amount);
 
         tokensMinted = tokensMinted.add(reward_amount);
 
-
         //Cannot mint more tokens than there are
-        assert(tokensMinted <= maxSupplyForEra);
+        require(tokensMinted <= maxSupplyForEra);
 
         //set readonly diagnostics data
-        lastRewardTo = msg.sender;
+        lastRewardTo = minter;
         lastRewardAmount = reward_amount;
         lastRewardEthBlockNumber = block.number;
 
 
-          _startNewMiningEpoch();
+        _startNewMiningEpoch();
 
-          Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+        Mint(minter, reward_amount, epochCount, challengeNumber );        
 
         return true;
 
@@ -309,9 +309,9 @@ contract _0xBitcoinUpgrade is ERC20Interface {
 
       //if max supply for the era will be exceeded next reward round then enter the new era before that happens
 
-      //40 is the final reward era, almost all tokens minted
+      //32 is the final reward era, almost all tokens minted
       //once the final era is reached, more tokens will not be given out because the assert function
-      if( tokensMinted.add(getMiningReward()) > maxSupplyForEra && rewardEra < 39)
+      if(tokensMinted.add(getMiningReward()) > maxSupplyForEra && rewardEra < 31)
       {
         rewardEra = rewardEra + 1;
       }
@@ -331,13 +331,7 @@ contract _0xBitcoinUpgrade is ERC20Interface {
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       //do this last since this is a protection mechanism in the mint() function
-      challengeNumber = block.blockhash(block.number - 1);
-
-      //do not allow for bricking the mining 
-      if(solutionForChallenge[challengeNumber] != 0x0) revert(); 
-
-
-
+      challengeNumber = block.blockhash(block.number - 1);      
 
     }
 
@@ -401,8 +395,47 @@ contract _0xBitcoinUpgrade is ERC20Interface {
 
     function getMiningTarget() public constant returns (uint) {
        return miningTarget;
-   }
+    }
 
+
+     /**
+     *  
+     * @dev Deposit original tokens, receive proxy tokens 
+     * @param amount Amount of original tokens to charge
+     */
+    function depositTokens(address from, uint amount) internal returns (bool)
+    {
+         
+        require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
+            
+        balances[from] += amount  ;
+        amountDeposited += amount;
+        
+        Transfer(address(this), from, amount);
+        
+        return true;
+    }
+
+
+
+    /**
+     * @dev Withdraw original tokens, dissipate proxy tokens 
+     * @param amount Amount of original tokens to release
+     */
+    function withdrawTokens(uint amount) public returns (bool)
+    {
+        address from = msg.sender;
+         
+        balances[from] -= amount;
+        amountDeposited -=  amount;
+        
+        Transfer( from, address(this), amount);
+            
+        require( ERC20Interface( originalTokenContract ).transfer( from, amount) ); 
+        
+        return true;
+    }
+    
 
 
     //21m coins total
@@ -423,18 +456,21 @@ contract _0xBitcoinUpgrade is ERC20Interface {
 
         return digest;
 
-      }
+    }
 
         //help debug mining software
-      function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
+    function checkMintSolution(uint256 nonce, bytes32 challenge_digest, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
 
-          bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
+        bytes32 digest = keccak256(challenge_number,msg.sender,nonce);
 
-          if(uint256(digest) > testTarget) revert();
+        if(uint256(digest) > testTarget) revert();
 
-          return (digest == challenge_digest);
+        return (digest == challenge_digest);
 
-        }
+    }
+
+
+    
 
 
 
@@ -445,6 +481,13 @@ contract _0xBitcoinUpgrade is ERC20Interface {
     // ------------------------------------------------------------------------
 
     function totalSupply() public constant returns (uint) {
+
+        return _totalSupply;
+
+    }
+
+
+    function minedSupply() public constant returns (uint) {
 
         return tokensMinted;
 
@@ -590,6 +633,17 @@ contract _0xBitcoinUpgrade is ERC20Interface {
 
     }
 
+
+      
+    function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public returns (bool success) {
+        
+        require( token == originalTokenContract );
+        
+        require( depositTokens(from, tokens) );
+
+        return true;
+
+     }
 
 
     // ------------------------------------------------------------------------

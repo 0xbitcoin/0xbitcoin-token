@@ -8,10 +8,7 @@ import { ethers } from 'hardhat'
 
 const deployOptions: DeployFunction = async (hre) => {
   const {  run, network } = hre
- // const deployer = await getNamedSigner('deployer')
-
-  //const tokens = getTokens(network)
-
+ 
   // Make sure contracts are compiled
   await run('compile')
 
@@ -20,15 +17,21 @@ const deployOptions: DeployFunction = async (hre) => {
   console.log('')
  
 
-  
-  
-
-  const payspecDeploy = await deploy({
-    contract: 'Payspec',
+   
+  const originalToken = await deploy({
+    contract: '_0xBitcoinTokenTest',
     args: [ ],
     skipIfAlreadyDeployed: false,
     hre, 
   })
+
+  const upgradeToken = await deploy({
+    contract: '_0xBitcoinTokenUpgrade',
+    args: [ originalToken.address ],
+    skipIfAlreadyDeployed: false,
+    hre, 
+  })
+
 
 
 }
