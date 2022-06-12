@@ -32,8 +32,7 @@ export async function signPermitApproval(
     domainData: DomainData, 
     permitter: Wallet
     ) : Promise<PermitApproval>{
-
-    let output: PermitApproval 
+ 
 
     let abiCoder = new utils.AbiCoder()
 
@@ -48,8 +47,7 @@ export async function signPermitApproval(
         domainData.chainId,
         domainData.resolverAddress]
     ) 
-    console.log('domainSeparator',utils.keccak256(domainSeparator))
-
+    
     let permitTypehash = utils.keccak256(utils.toUtf8Bytes("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"))
         
     let owner = permitter.address
@@ -61,76 +59,29 @@ export async function signPermitApproval(
         owner,
         approvalInputs.spender,
         approvalInputs.value,
-        approvalInputs.permitNonce + 1 ,
+        approvalInputs.permitNonce   ,
         approvalInputs.deadline]
     );
 
-    console.log('utils.keccak256(typeHashAndData)',utils.keccak256(typeHashAndData))
-
+   
     let digest = utils.solidityKeccak256(
          ["bytes2","bytes32","bytes32"], [   
         Buffer.from('1901', 'hex'),
         utils.keccak256(domainSeparator), //correct
         utils.keccak256(typeHashAndData) //correct 
-     ]
-         )
-
-
-    /*let digest = utils.keccak256(
-        utils.solidityPack( ["bytes","bytes32","bytes32"], [   
-            Buffer.from('1901', 'hex'),
-            utils.keccak256(domainSeparator),
-            utils.keccak256(typeHashAndData) ]
-        )
-    );*/
-   console.log('cDigest', digest )   
- 
+     ]) 
 
 
    var msgBuffer= toBuffer(digest)
 
    const sig = ecsign(msgBuffer, toBuffer(permitter.privateKey))
-  
-
-   console.log('sig',sig)
-
-
-
-
+   
    var hashBuf = toBuffer(digest)
 
    const pubKey  = ecrecover(hashBuf, sig.v, sig.r, sig.s);
    const addrBuf = pubToAddress(pubKey);
-   const recoveredSignatureSigner    = bufferToHex(addrBuf);
-   console.log('recoveredSignatureSigner',recoveredSignatureSigner)
-/*
-    console.log('signer address is ', permitter.address )
-
-    let flatSig = await permitter.signMessage(messageHashBytes)
+   const recoveredSignatureSigner = bufferToHex(addrBuf);
  
-  
-            //this is acting the same as the contract 
-    let pubKey = utils.recoverPublicKey(digest, flatSig);
-    let recAddress = utils.computeAddress(pubKey)
-    console.log('recAddress',recAddress)
-*/
-      
-    // For Solidity, we need the expanded-format of a signature
-    //let sig = utils.splitSignature(flatSig);
-
-
-
-    /*
-     bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(REVOKE_TYPEHASH, uuid, _nonces[attester]++)
-                )
-            )
-        );
-    */
     
     return  {
         owner,

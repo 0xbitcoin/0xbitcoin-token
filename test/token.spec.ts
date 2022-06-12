@@ -119,13 +119,8 @@ describe('Upgrade Contract', () => {
 
   it('should permit approve', async () => { 
 
-    console.log('permitter is',permitter.address)
-
-    let dSep = await upgradeTokenContract.DOMAIN_SEPARATOR()
-
-    console.log('dSep',dSep)
-
-
+    
+   
 
     let permitNonce = await upgradeTokenContract.nonces( miner.address )
     expect(permitNonce).to.eql(0)
@@ -143,49 +138,17 @@ describe('Upgrade Contract', () => {
 
     let ethersNetwork = await ethers.provider.getNetwork()
 
-    
-
+     
     let domainData : DomainData = {
       name: await upgradeTokenContract.name(),
       version: await upgradeTokenContract.version(),
       chainId: ethersNetwork.chainId,
       resolverAddress: upgradeTokenContract.address
     }
-
-    console.log('domainData',domainData)
-   
-
+ 
     let permitInputs = await signPermitApproval( 
       approvalInputs, domainData, permitter  )
-
-
-    let thData = await upgradeTokenContract.testPermit(
-       permitInputs.owner,
-      permitInputs.spender,
-      permitInputs.value,
-      permitInputs.deadline)
-      console.log('thData',thData)
-
-      let tDigest = await upgradeTokenContract.testDigest( 
-        permitInputs.owner,
-        permitInputs.spender,
-        permitInputs.value,
-        permitInputs.deadline,
-        permitInputs.v,
-        permitInputs.r,
-        permitInputs.s )
-        console.log('tDigest',tDigest)
-
-
-        let tRecover = await upgradeTokenContract.testRecover( 
-          permitInputs.owner,
-          permitInputs.spender,
-          permitInputs.value,
-          permitInputs.deadline,
-          permitInputs.v,
-          permitInputs.r,
-          permitInputs.s )
-          console.log('tRecover',tRecover)
+ 
     
     await upgradeTokenContract.connect(miner).permit(
       permitInputs.owner,
@@ -195,11 +158,8 @@ describe('Upgrade Contract', () => {
       permitInputs.v,
       permitInputs.r,
       permitInputs.s 
-      )
-
-    expect(permitNonce).to.eql(1)
-
-
+      ) 
+     
 
   })
 
