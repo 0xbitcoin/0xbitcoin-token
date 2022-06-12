@@ -26,7 +26,7 @@ pragma solidity ^0.4.18;
 
 // ----------------------------------------------------------------------------
 
-// Safe maths
+// Safe math
 
 // ----------------------------------------------------------------------------
 
@@ -201,7 +201,6 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     address public originalTokenContract; 
     uint256 public originalMinedSupply;  
-    bool public initialized; 
 
     uint256 public amountDeposited;
 
@@ -240,9 +239,9 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
 
 
-    function initialize() internal{
+    function initialize() internal {
 
-      require(!initialized);
+     
  
       epochCount = EIP918Interface( originalTokenContract  ).epochCount();
 
@@ -258,17 +257,20 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
       latestDifficultyPeriodStarted = EIP918Interface(originalTokenContract).latestDifficultyPeriodStarted();   
       challengeNumber = EIP918Interface(originalTokenContract).challengeNumber();
         
-      initialized = true;
+      
+
     }
 
 
     function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+
         return mintTo(nonce,msg.sender);
+
     }
 
     function mintTo(uint256 nonce, address minter) public returns (bool success) {
         
-        require(initialized);
+        
 
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
         bytes32 digest = keccak256(challengeNumber, minter, nonce );
@@ -341,7 +343,6 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
  
     function _reAdjustDifficulty() internal {
 
-
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
         //assume 360 ethereum blocks per hour
 
@@ -368,7 +369,6 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
           //make it easier
           miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));   //by up to 50 %
         }
-
 
 
         latestDifficultyPeriodStarted = block.number;
@@ -409,7 +409,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
     {
          
         require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
-            
+        
         balances[from] = balances[from].add(amount);
         amountDeposited = amountDeposited.add(amount);
         
@@ -418,26 +418,6 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
         return true;
     }
 
-
-
-    /**
-     * @dev Withdraw original tokens
-     * @param amount Amount of original tokens to release
-     */
-    function withdraw(uint amount) public returns (bool)
-    {
-        address from = msg.sender;
-         
-        balances[from] = balances[from].sub(amount);
-        amountDeposited = amountDeposited.sub(amount);
-        
-        Transfer( from, address(this), amount);
-            
-        require( ERC20Interface( originalTokenContract ).transfer( from, amount) ); 
-        
-        return true;
-    }
-    
 
 
     //21m coins total
