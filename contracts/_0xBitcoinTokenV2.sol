@@ -52,11 +52,11 @@ library ExtendedMath {
 
 contract ERC20Interface {
 
-    function totalSupply() public constant returns (uint);
+    function totalSupply() public view returns (uint);
 
-    function balanceOf(address tokenOwner) public constant returns (uint balance);
+    function balanceOf(address tokenOwner) public view returns (uint balance);
 
-    function allowance(address tokenOwner, address spender) public constant returns (uint remaining);
+    function allowance(address tokenOwner, address spender) public view returns (uint remaining);
 
     function transfer(address to, uint tokens) public returns (bool success);
 
@@ -100,7 +100,7 @@ contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function balanceOf(address tokenOwner) public constant returns (uint balance) {
+    function balanceOf(address tokenOwner) public view returns (uint balance) {
 
         return balances[tokenOwner];
 
@@ -197,7 +197,7 @@ contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function allowance(address tokenOwner, address spender) public constant returns (uint remaining) {
+    function allowance(address tokenOwner, address spender) public view returns (uint remaining) {
 
         return allowed[tokenOwner][spender];
 
@@ -616,16 +616,16 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
 
     //this is a recent ethereum block hash, used to prevent pre-mining future blocks
-    function getChallengeNumber() public constant returns (bytes32) {
+    function getChallengeNumber() public view returns (bytes32) {
         return challengeNumber;
     }
 
     //the number of zeroes the digest of the PoW solution requires.  Auto adjusts
-     function getMiningDifficulty() public constant returns (uint) {
+     function getMiningDifficulty() public view returns (uint) {
         return _MAXIMUM_TARGET / (miningTarget);
     }
 
-    function getMiningTarget() public constant returns (uint) {
+    function getMiningTarget() public view returns (uint) {
        return miningTarget;
     }
 
@@ -683,14 +683,14 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     // ------------------------------------------------------------------------
 
-    function totalSupply() public constant returns (uint) {
+    function totalSupply() public view returns (uint) {
 
         return _totalSupply;
 
     }
 
 
-    function minedSupply() public constant returns (uint) {
+    function minedSupply() public view returns (uint) {
 
         return tokensMinted;
 
@@ -744,7 +744,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     // ------------------------------------------------------------------------
 
-    function () public payable {
+    receive() external payable {
 
         revert();
 
