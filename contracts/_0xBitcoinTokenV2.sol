@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 
 // ----------------------------------------------------------------------------
@@ -81,6 +81,10 @@ library ExtendedMath {
     }
 }
 
+
+
+
+
 // ----------------------------------------------------------------------------
 
 // ERC Token Standard #20 Interface
@@ -103,12 +107,151 @@ contract ERC20Interface {
 
     function transferFrom(address from, address to, uint tokens) public returns (bool success);
 
+    function _approve(address spender, uint tokens) internal returns (bool success);
+
+    function _transfer(address from, address to, uint tokens) internal returns (bool success);
 
     event Transfer(address indexed from, address indexed to, uint tokens);
 
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 
 }
+
+contract ERC20Standard is ERC20Interface {
+
+    using SafeMath for uint;
+
+
+    mapping(address => uint) balances;   
+    mapping(address => mapping(address => uint)) allowed;
+
+
+    function _transfer(address from, address to, uint tokens) internal returns (bool success) {
+
+        balances[from] = balances[from].sub(tokens);
+
+        balances[to] = balances[to].add(tokens);
+
+        Transfer(from, to, tokens);
+
+        return true;
+    }
+
+
+
+    // ------------------------------------------------------------------------
+
+    // Get the token balance for account `tokenOwner`
+
+    // ------------------------------------------------------------------------
+
+    function balanceOf(address tokenOwner) public constant returns (uint balance) {
+
+        return balances[tokenOwner];
+
+    }
+
+
+
+    // ------------------------------------------------------------------------
+
+    // Transfer the balance from token owner's account to `to` account
+
+    // - Owner's account must have sufficient balance to transfer
+
+    // - 0 value transfers are allowed
+
+    // ------------------------------------------------------------------------
+
+    function transfer(address to, uint tokens) public returns (bool success) {
+
+        return _transfer(msg.sender, to, tokens);
+
+    }
+
+  
+
+
+    // ------------------------------------------------------------------------
+
+    // Token owner can approve for `spender` to transferFrom(...) `tokens`
+
+    // from the token owner's account
+
+    //
+
+    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
+
+    // recommends that there are no checks for the approval double-spend attack
+
+    // as this should be implemented in user interfaces
+
+    // ------------------------------------------------------------------------
+
+    function approve(address spender, uint tokens) public returns (bool success) {
+
+        return _approve(msg.sender, spender,tokens);
+
+    }
+
+      function _approve(address owner, address spender, uint tokens) internal returns (bool success) {
+
+        allowed[owner][spender] = tokens;
+
+        Approval(owner, spender, tokens);
+
+        return true;
+
+    }
+
+
+
+
+    // ------------------------------------------------------------------------
+
+    // Transfer `tokens` from the `from` account to the `to` account
+
+    //
+
+    // The calling account must already have sufficient tokens approve(...)-d
+
+    // for spending from the `from` account and
+
+    // - From account must have sufficient balance to transfer
+
+    // - Spender must have sufficient allowance to transfer
+
+    // - 0 value transfers are allowed
+
+    // ------------------------------------------------------------------------
+
+    function transferFrom(address from, address to, uint tokens) public returns (bool success) {
+        
+        allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
+
+        return _transfer(from,to,tokens);
+
+    }
+
+
+    // ------------------------------------------------------------------------
+
+    // Returns the amount of tokens approved by the owner that can be
+
+    // transferred to the spender's account
+
+    // ------------------------------------------------------------------------
+
+    function allowance(address tokenOwner, address spender) public constant returns (uint remaining) {
+
+        return allowed[tokenOwner][spender];
+
+    }
+
+
+}
+
+
 
 
 contract EIP918Interface {
@@ -124,12 +267,128 @@ contract EIP918Interface {
 }
 
 
+library ECRecover {
+    /**
+     * @notice Recover signer's address from a signed message
+     * @dev Adapted from: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/65e4ffde586ec89af3b7e9140bdc9235d1254853/contracts/cryptography/ECDSA.sol
+     * Modifications: Accept v, r, and s as separate arguments
+     * @param digest    Keccak-256 hash digest of the signed message
+     * @param v         v of the signature
+     * @param r         r of the signature
+     * @param s         s of the signature
+     * @return Signer address
+     */
+    function recover(
+        bytes32 digest,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal pure returns (address) {
+        // EIP-2 still allows signature malleability for ecrecover(). Remove this possibility and make the signature
+        // unique. Appendix F in the Ethereum Yellow paper (https://ethereum.github.io/yellowpaper/paper.pdf), defines
+        // the valid range for s in (281): 0 < s < secp256k1n ÷ 2 + 1, and for v in (282): v ∈ {27, 28}. Most
+        // signatures from current libraries generate a unique signature with an s-value in the lower half order.
+        //
+        // If your library generates malleable signatures, such as s-values in the upper range, calculate a new s-value
+        // with 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141 - s1 and flip v from 27 to 28 or
+        // vice versa. If your library also generates signatures with 0/1 for v instead 27/28, add 27 to v to accept
+        // these malleable signatures as well.
+        if (
+            uint256(s) >
+            0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
+        ) {
+            revert("ECRecover: invalid signature 's' value");
+        }
+
+        if (v != 27 && v != 28) {
+            revert("ECRecover: invalid signature 'v' value");
+        }
+
+        // If the signature is valid (and not malleable), return the signer address
+        address signer = ecrecover(digest, v, r, s);
+        require(signer != address(0), "ECRecover: invalid signature");
+
+        return signer;
+    }
+}
+
+
+
+contract EIP712Domain {
+    /**
+     * @dev EIP712 Domain Separator
+     */
+    bytes32 public DOMAIN_SEPARATOR;
+}
+
+
+
+/**
+ * @title EIP712
+ * @notice A library that provides EIP712 helper functions
+ */
+library EIP712 {
+    /**
+     * @notice Make EIP712 domain separator
+     * @param name      Contract name
+     * @param version   Contract version
+     * @return Domain separator
+     */
+    function makeDomainSeparator(string memory name, string memory version)
+        internal
+        view
+        returns (bytes32)
+    {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+        return
+            keccak256(
+                abi.encode(
+                    // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+                    0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f,
+                    keccak256(bytes(name)),
+                    keccak256(bytes(version)),
+                    chainId,
+                    address(this)
+                )
+            );
+    }
+
+    /**
+     * @notice Recover signer's address from a EIP712 signature
+     * @param domainSeparator   Domain separator
+     * @param v                 v of the signature
+     * @param r                 r of the signature
+     * @param s                 s of the signature
+     * @param typeHashAndData   Type hash concatenated with data
+     * @return Signer's address
+     */
+    function recover(
+        bytes32 domainSeparator,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bytes memory typeHashAndData
+    ) internal pure returns (address) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                domainSeparator,
+                keccak256(typeHashAndData)
+            )
+        );
+        return ECRecover.recover(digest, v, r, s);
+    }
+}
+
 
 /**
  * @title EIP-2612
  * @notice Provide internal implementation for gas-abstracted approvals
  */
-abstract contract EIP2612 is EIP712Domain {
+contract EIP2612 is EIP712Domain,ERC20Standard {
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
     bytes32
         public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
@@ -202,7 +461,7 @@ abstract contract EIP2612 is EIP712Domain {
 
 // ----------------------------------------------------------------------------
 
-contract _0xBitcoinTokenV2 is ERC20Interface, EIP2612 {
+contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     using SafeMath for uint;
     using ExtendedMath for uint;
@@ -239,8 +498,6 @@ contract _0xBitcoinTokenV2 is ERC20Interface, EIP2612 {
 
     uint public tokensMinted;    
 
-    mapping(address => uint) balances;   
-    mapping(address => mapping(address => uint)) allowed;
 
     address public originalTokenContract; 
     uint256 public originalMinedSupply;  
@@ -265,6 +522,8 @@ contract _0xBitcoinTokenV2 is ERC20Interface, EIP2612 {
         name = "0xBitcoin Token V2";
 
         decimals = 8;
+
+        DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, "2");
         
 
         _totalSupply = 21000000 * 10**uint(decimals);
@@ -517,120 +776,6 @@ contract _0xBitcoinTokenV2 is ERC20Interface, EIP2612 {
     }
 
 
-
-    // ------------------------------------------------------------------------
-
-    // Get the token balance for account `tokenOwner`
-
-    // ------------------------------------------------------------------------
-
-    function balanceOf(address tokenOwner) public constant returns (uint balance) {
-
-        return balances[tokenOwner];
-
-    }
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Transfer the balance from token owner's account to `to` account
-
-    // - Owner's account must have sufficient balance to transfer
-
-    // - 0 value transfers are allowed
-
-    // ------------------------------------------------------------------------
-
-    function transfer(address to, uint tokens) public returns (bool success) {
-
-        balances[msg.sender] = balances[msg.sender].sub(tokens);
-
-        balances[to] = balances[to].add(tokens);
-
-        Transfer(msg.sender, to, tokens);
-
-        return true;
-
-    }
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Token owner can approve for `spender` to transferFrom(...) `tokens`
-
-    // from the token owner's account
-
-    //
-
-    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
-
-    // recommends that there are no checks for the approval double-spend attack
-
-    // as this should be implemented in user interfaces
-
-    // ------------------------------------------------------------------------
-
-    function approve(address spender, uint tokens) public returns (bool success) {
-
-        allowed[msg.sender][spender] = tokens;
-
-        Approval(msg.sender, spender, tokens);
-
-        return true;
-
-    }
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Transfer `tokens` from the `from` account to the `to` account
-
-    //
-
-    // The calling account must already have sufficient tokens approve(...)-d
-
-    // for spending from the `from` account and
-
-    // - From account must have sufficient balance to transfer
-
-    // - Spender must have sufficient allowance to transfer
-
-    // - 0 value transfers are allowed
-
-    // ------------------------------------------------------------------------
-
-    function transferFrom(address from, address to, uint tokens) public returns (bool success) {
-
-        balances[from] = balances[from].sub(tokens);
-
-        allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
-
-        balances[to] = balances[to].add(tokens);
-
-        Transfer(from, to, tokens);
-
-        return true;
-
-    }
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Returns the amount of tokens approved by the owner that can be
-
-    // transferred to the spender's account
-
-    // ------------------------------------------------------------------------
-
-    function allowance(address tokenOwner, address spender) public constant returns (uint remaining) {
-
-        return allowed[tokenOwner][spender];
-
-    }
 
 
 
