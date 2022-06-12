@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.8.6;
 
 
 // ----------------------------------------------------------------------------
@@ -22,49 +22,6 @@ pragma solidity ^0.4.24;
 
 // ----------------------------------------------------------------------------
 
-
-
-// ----------------------------------------------------------------------------
-
-// Safe math
-
-// ----------------------------------------------------------------------------
-
-library SafeMath {
-
-    function add(uint a, uint b) internal pure returns (uint c) {
-
-        c = a + b;
-
-        require(c >= a);
-
-    }
-
-    function sub(uint a, uint b) internal pure returns (uint c) {
-
-        require(b <= a);
-
-        c = a - b;
-
-    }
-
-    function mul(uint a, uint b) internal pure returns (uint c) {
-
-        c = a * b;
-
-        require(a == 0 || c / a == b);
-
-    }
-
-    function div(uint a, uint b) internal pure returns (uint c) {
-
-        require(b > 0);
-
-        c = a / b;
-
-    }
-
-}
 
 
 
@@ -118,9 +75,7 @@ contract ERC20Interface {
 }
 
 contract ERC20Standard is ERC20Interface {
-
-    using SafeMath for uint;
-
+ 
 
     mapping(address => uint) balances;   
     mapping(address => mapping(address => uint)) allowed;
@@ -128,9 +83,9 @@ contract ERC20Standard is ERC20Interface {
 
     function _transfer(address from, address to, uint tokens) internal returns (bool success) {
 
-        balances[from] = balances[from].sub(tokens);
+        balances[from] = balances[from] - (tokens);
 
-        balances[to] = balances[to].add(tokens);
+        balances[to] = balances[to] + (tokens);
 
         Transfer(from, to, tokens);
 
@@ -227,7 +182,7 @@ contract ERC20Standard is ERC20Interface {
 
     function transferFrom(address from, address to, uint tokens) public returns (bool success) {
         
-        allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
+        allowed[from][msg.sender] = allowed[from][msg.sender] - (tokens);
 
         return _transfer(from,to,tokens);
 
@@ -451,7 +406,7 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
 
 contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
-    using SafeMath for uint;
+   
     using ExtendedMath for uint;
 
 
@@ -559,10 +514,10 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
       
         uint reward_amount = currentMiningReward;
 
-        balances[minter] = balances[minter].add(reward_amount);
+        balances[minter] = balances[minter] + (reward_amount);
         Transfer(address(this), minter, reward_amount);
 
-        tokensMinted = tokensMinted.add(reward_amount);
+        tokensMinted = tokensMinted + (reward_amount);
 
         //Cannot mint more tokens than there are
         require(tokensMinted <= maxSupplyForEra);
@@ -589,17 +544,17 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
       //32 is the final reward era, almost all tokens minted
       //once the final era is reached, more tokens will not be given out because the assert function
-      if(tokensMinted.add(currentMiningReward) > maxSupplyForEra && rewardEra < 31)
+      if(tokensMinted + (currentMiningReward) > maxSupplyForEra && rewardEra < 31)
       {
         rewardEra = rewardEra + 1;
-        currentMiningReward = (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
+        currentMiningReward = (50 * 10**uint(decimals) ) / ( 2**rewardEra ) ;
       }
 
       //set the next minted supply at which the era will change
       // total supply is 2100000000000000  because of 8 decimal places
-      maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
+      maxSupplyForEra = _totalSupply - (_totalSupply / ( 2**(rewardEra + 1)));
 
-      epochCount = epochCount.add(1);
+      epochCount = epochCount + 1;
 
       //every so often, readjust difficulty. Dont readjust when deploying
       if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
@@ -629,20 +584,20 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         //if there were less eth blocks passed in time than expected
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerDiffPeriod )
         {
-          uint excess_block_pct = (targetEthBlocksPerDiffPeriod.mul(100)).div( ethBlocksSinceLastDifficultyPeriod );
+          uint excess_block_pct = (targetEthBlocksPerDiffPeriod * (100)) / ( ethBlocksSinceLastDifficultyPeriod );
 
-          uint excess_block_pct_extra = excess_block_pct.sub(100).limitLessThan(1000);
+          uint excess_block_pct_extra = (excess_block_pct - 100).limitLessThan(1000);
           // If there were 5% more blocks mined than expected then this is 5.  If there were 100% more blocks mined than expected then this is 100.
 
           //make it harder
-          miningTarget = miningTarget.sub(miningTarget.div(2000).mul(excess_block_pct_extra));   //by up to 50 %
+          miningTarget = miningTarget - ((miningTarget / 2000) * excess_block_pct_extra);   //by up to 50 %
         }else{
-          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod.mul(100)).div( targetEthBlocksPerDiffPeriod );
+          uint shortage_block_pct = (ethBlocksSinceLastDifficultyPeriod * (100)) / ( targetEthBlocksPerDiffPeriod );
 
-          uint shortage_block_pct_extra = shortage_block_pct.sub(100).limitLessThan(1000); //always between 0 and 1000
+          uint shortage_block_pct_extra = (shortage_block_pct - 100).limitLessThan(1000); //always between 0 and 1000
 
           //make it easier
-          miningTarget = miningTarget.add(miningTarget.div(2000).mul(shortage_block_pct_extra));   //by up to 50 %
+          miningTarget = miningTarget + ((miningTarget / 2000) * shortage_block_pct_extra);   //by up to 50 %
         }
 
 
@@ -667,7 +622,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     //the number of zeroes the digest of the PoW solution requires.  Auto adjusts
      function getMiningDifficulty() public constant returns (uint) {
-        return _MAXIMUM_TARGET.div(miningTarget);
+        return _MAXIMUM_TARGET / (miningTarget);
     }
 
     function getMiningTarget() public constant returns (uint) {
@@ -685,8 +640,8 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
          
         require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
         
-        balances[from] = balances[from].add(amount);
-        amountDeposited = amountDeposited.add(amount);
+        balances[from] = balances[from] + (amount);
+        amountDeposited = amountDeposited + (amount);
         
         Transfer(address(this), from, amount);
         
