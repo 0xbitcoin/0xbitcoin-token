@@ -40,21 +40,24 @@ export async function signPermitApproval(
     let domainString = utils.keccak256(utils.toUtf8Bytes("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
 
     let domainSeparator = abiCoder.encode(
-        ["bytes32","string","string","uint","address"],
-        [domainString,
-        domainData.name,
-        domainData.version,
+        ["bytes32","bytes32","bytes32","uint","address"],
+        [
+        domainString,
+        utils.keccak256(utils.toUtf8Bytes(domainData.name)),
+        utils.keccak256(utils.toUtf8Bytes(domainData.version)),
         domainData.chainId,
         domainData.resolverAddress]
     ) 
+    console.log('domainSeparator',utils.keccak256(domainSeparator))
 
     let permitTypehash = utils.keccak256(utils.toUtf8Bytes("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"))
-    
+        
     let owner = permitter.address
 
     let typeHashAndData = abiCoder.encode(
         ["bytes32","address","address","uint","uint","uint"],
-        [permitTypehash,
+        [
+        permitTypehash,
         owner,
         approvalInputs.spender,
         approvalInputs.value,
@@ -62,21 +65,41 @@ export async function signPermitApproval(
         approvalInputs.deadline]
     );
 
-    
-    let digest = utils.keccak256(
+    console.log('utils.keccak256(typeHashAndData)',utils.keccak256(typeHashAndData))
+
+    let digest = utils.solidityKeccak256(
+         ["bytes2","bytes32","bytes32"], [   
+        Buffer.from('1901', 'hex'),
+        utils.keccak256(domainSeparator), //correct
+        utils.keccak256(typeHashAndData) //correct 
+     ]
+         )
+
+
+    /*let digest = utils.keccak256(
         utils.solidityPack( ["bytes","bytes32","bytes32"], [   
             Buffer.from('1901', 'hex'),
             utils.keccak256(domainSeparator),
             utils.keccak256(typeHashAndData) ]
         )
-    );
+    );*/
 
-    let flatSig = await permitter.signMessage(digest)
+    let messageHashBinary = utils.arrayify(digest);
+
+
+    console.log('signer address is ', permitter.address )
+
+    let flatSig = await permitter.signMessage(messageHashBinary)
  
     
     // For Solidity, we need the expanded-format of a signature
     let sig = utils.splitSignature(flatSig);
-    
+
+
+
+    let recAddress = utils.recoverAddress(messageHashBinary, flatSig)  
+        console.log('recAddress',recAddress)
+
 
     /*
      bytes32 digest = keccak256(
