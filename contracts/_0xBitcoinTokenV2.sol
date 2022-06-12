@@ -462,11 +462,11 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     }
 
+    //set values to continue state forwards where it left off 
     function initialize() internal {
  
       epochCount = EIP918Interface( originalTokenContract  ).epochCount();
-
-      //set values to pick up where was left off 
+      
       tokensMinted = EIP918Interface( originalTokenContract  ).tokensMinted();
 
       rewardEra = EIP918Interface(originalTokenContract).rewardEra();
@@ -489,9 +489,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     }
 
     function mintTo(uint256 nonce, address minter) public returns (bool success) {
-        
-        
-
+    
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
         bytes32 digest = keccak256(abi.encodePacked(challengeNumber, minter, nonce ));
 
@@ -515,7 +513,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         lastRewardTo = minter;
         lastRewardAmount = reward_amount;
         lastRewardEthBlockNumber = block.number;
-
 
         _startNewMiningEpoch();
 
