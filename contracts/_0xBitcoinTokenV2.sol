@@ -404,7 +404,7 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
     }
 
 
-    //FOR TESTING ONLY 
+    //FOR TESTING ONLY  -----
       function testPermit(
         address owner,
         address spender,
@@ -429,6 +429,38 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
         );
 
         _approve(owner, spender, value);*/
+    }
+
+     
+
+    function testDigest(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline ,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external view returns (bytes32 digest) {
+        require(deadline >= block.timestamp, "Permit is expired");
+
+        bytes memory data = abi.encode(
+            PERMIT_TYPEHASH,
+            owner,  
+            spender,
+            value,
+            _permitNonces[owner]+1,
+            deadline
+        );
+
+        digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(data)
+            )
+        );
+       
     }
 
        function testRecover(

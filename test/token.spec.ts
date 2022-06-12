@@ -165,7 +165,7 @@ describe('Upgrade Contract', () => {
       permitInputs.deadline)
       console.log('thData',thData)
 
-      let tRecover = await upgradeTokenContract.testRecover( 
+      let tDigest = await upgradeTokenContract.testDigest( 
         permitInputs.owner,
         permitInputs.spender,
         permitInputs.value,
@@ -173,7 +173,18 @@ describe('Upgrade Contract', () => {
         permitInputs.v,
         permitInputs.r,
         permitInputs.s )
-        console.log('tRecover',tRecover)
+        console.log('tDigest',tDigest)
+
+
+        let tRecover = await upgradeTokenContract.testRecover( 
+          permitInputs.owner,
+          permitInputs.spender,
+          permitInputs.value,
+          permitInputs.deadline,
+          permitInputs.v,
+          permitInputs.r,
+          permitInputs.s )
+          console.log('tRecover',tRecover)
     
     await upgradeTokenContract.connect(miner).permit(
       permitInputs.owner,

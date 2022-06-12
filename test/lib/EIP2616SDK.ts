@@ -83,7 +83,7 @@ export async function signPermitApproval(
             utils.keccak256(typeHashAndData) ]
         )
     );*/
- ;
+   console.log('cDigest', digest )  //this is correct 
 
     let msgHash =  (utils.arrayify(digest));
 
