@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 // ----------------------------------------------------------------------------
 
-// '0xBitcoin Token' contract
+// '0xBitcoin Token' contract  
 
 // Mineable ERC20 Token using Proof Of Work
 
@@ -17,26 +17,13 @@ pragma solidity ^0.8.6;
 
 // Decimals    : 8
 
+// Version     : 2
+
 //
 
 
 // ----------------------------------------------------------------------------
 
-
-
-
-library ExtendedMath {
-
-
-    //return the smaller of the two inputs (a or b)
-    function limitLessThan(uint a, uint b) internal pure returns (uint c) {
-
-        if(a > b) return b;
-
-        return a;
-
-    }
-}
 
 
 
@@ -408,6 +395,23 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
 
 
 
+
+
+library ExtendedMath {
+
+
+    //return the smaller of the two inputs (a or b)
+    function limitLessThan(uint a, uint b) internal pure returns (uint c) {
+
+        if(a > b) return b;
+
+        return a;
+
+    }
+}
+
+
+
 contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
    
     using ExtendedMath for uint;
@@ -449,7 +453,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         symbol = "0xBTC2";
 
-        name = "0xBitcoin Token V2";
+        name = "0xBitcoin Token v2";
 
         decimals = 8;
 
@@ -538,7 +542,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
       }
 
       //set the next minted supply at which the era will change
-      // total supply is 2100000000000000  because of 8 decimal places
+      //total supply is 2100000000000000  because of 8 decimal places
       maxSupplyForEra = totalSupply - (totalSupply / ( 2**(rewardEra + 1)));
 
       epochCount = epochCount + 1;
@@ -551,7 +555,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
-      //do this last since this is a protection mechanism in the mint() function
       challengeNumber = blockhash(block.number - 1);      
 
     }
@@ -561,12 +564,10 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     function _reAdjustDifficulty() internal {
 
         uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
-        //assume 360 ethereum blocks per hour
 
-        //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
         uint epochsMined = _BLOCKS_PER_READJUSTMENT; 
 
-        uint targetEthBlocksPerDiffPeriod = epochsMined * 60; //should be 60 times slower than ethereum
+        uint targetEthBlocksPerDiffPeriod = epochsMined * 60; 
 
         //if there were less eth blocks passed in time than expected
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerDiffPeriod )
@@ -590,12 +591,12 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         latestDifficultyPeriodStarted = block.number;
 
-        if(miningTarget < _MINIMUM_TARGET) //very difficult
+        if(miningTarget < _MINIMUM_TARGET) //most difficult
         {
           miningTarget = _MINIMUM_TARGET;
         }
 
-        if(miningTarget > _MAXIMUM_TARGET) //very easy
+        if(miningTarget > _MAXIMUM_TARGET) //most easy
         {
           miningTarget = _MAXIMUM_TARGET;
         }
@@ -618,13 +619,11 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
 
      /**
-     *  
-     * @dev Deposit original tokens
-     * @param amount Amount of original tokens to charge
+     * @dev Burn v1 tokens to receive v2 tokens
+     * @param amount Amount of original tokens to change
      */
     function deposit(address from, uint amount) internal returns (bool)
-    {
-         
+    {         
         require( ERC20Interface( originalTokenContract ).transferFrom( from, address(this), amount) );
         
         balances[from] = balances[from] + (amount);
@@ -635,10 +634,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         return true;
     }
 
-
-
-  
-
    
     function getMintDigest(uint256 nonce, address minter, bytes32 challenge_number) public view returns (bytes32 digesttest) {
 
@@ -647,7 +642,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         return digest;
 
     }
-
       
     function checkMintSolution(uint256 nonce, address minter, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
 
@@ -659,20 +653,11 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     }
 
-
-    
-
-
     function minedSupply() public view returns (uint) {
 
         return tokensMinted;
 
     }
-
-
-
-
-
    
       /**
      * @notice Update allowance with a signed permit
@@ -695,9 +680,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     ) external {
         _permit(owner, spender, value, deadline, v, r, s);
     }
-
-
-
 
       
     function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public returns (bool success) {
@@ -722,7 +704,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         revert();
 
     }
-
 
  
 }
