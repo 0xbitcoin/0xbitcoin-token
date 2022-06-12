@@ -263,6 +263,7 @@ contract EIP918Interface {
   function latestDifficultyPeriodStarted() external returns (uint256);
   function rewardEra() external returns (uint256);
   function epochCount() external returns (uint256); 
+  function getMiningReward() external returns (uint256);
 
 }
 
@@ -442,22 +443,9 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
     }
 }
 
-
-
-// ----------------------------------------------------------------------------
-
-// Owned contract
-
-// ----------------------------------------------------------------------------
-
- 
-
-
 // ----------------------------------------------------------------------------
 
 // ERC20 Token, with the addition of symbol, name and decimals and an
-
-// initial fixed supply
 
 // ----------------------------------------------------------------------------
 
@@ -492,6 +480,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     uint public rewardEra;
     uint public maxSupplyForEra;
 
+    uint public currentMiningReward;
     address public lastRewardTo;
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber; 
@@ -507,11 +496,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     event Mint(address from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
     event Transfer(address from, address to, uint amount);
 
-    // ------------------------------------------------------------------------
-
-    // Constructor
-
-    // ------------------------------------------------------------------------
 
     function _0xBitcoinTokenV2( address _originalTokenContract ) public {
 
@@ -531,19 +515,9 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         initialize(); 
 
-
-        //You must mine this ERC20 token
-        //balances[owner] = _totalSupply;
-        //Transfer(address(0), owner, _totalSupply);
-
     }
 
-
-
-
     function initialize() internal {
-
-     
  
       epochCount = EIP918Interface( originalTokenContract  ).epochCount();
 
@@ -559,7 +533,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
       latestDifficultyPeriodStarted = EIP918Interface(originalTokenContract).latestDifficultyPeriodStarted();   
       challengeNumber = EIP918Interface(originalTokenContract).challengeNumber();
         
-      
+      currentMiningReward = EIP918Interface(originalTokenContract).getMiningReward();
 
     }
 
@@ -583,7 +557,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         //only allow one reward for each block
         require(lastRewardEthBlockNumber != block.number);
       
-        uint reward_amount = getMiningReward();
+        uint reward_amount = currentMiningReward;
 
         balances[minter] = balances[minter].add(reward_amount);
         Transfer(address(this), minter, reward_amount);
@@ -615,9 +589,10 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
       //32 is the final reward era, almost all tokens minted
       //once the final era is reached, more tokens will not be given out because the assert function
-      if(tokensMinted.add(getMiningReward()) > maxSupplyForEra && rewardEra < 31)
+      if(tokensMinted.add(currentMiningReward) > maxSupplyForEra && rewardEra < 31)
       {
         rewardEra = rewardEra + 1;
+        currentMiningReward = (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
       }
 
       //set the next minted supply at which the era will change
@@ -720,16 +695,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
 
 
-    //21m coins total
-    //reward begins at 50 and is cut in half every reward era (as tokens are mined)
-    function getMiningReward() public constant returns (uint) {
-        //once we get half way thru the coins, only get 25 per block
-
-         //every reward era, the reward amount halves.
-
-         return (50 * 10**uint(decimals) ).div( 2**rewardEra ) ;
-
-    }
+  
 
    
     function getMintDigest(uint256 nonce, address minter, bytes32 challenge_number) public view returns (bytes32 digesttest) {
