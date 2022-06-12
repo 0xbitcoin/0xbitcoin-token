@@ -83,22 +83,25 @@ export async function signPermitApproval(
             utils.keccak256(typeHashAndData) ]
         )
     );*/
+ ;
 
-    let messageHashBinary = utils.arrayify(digest);
+    let msgHash =  (utils.arrayify(digest));
 
 
     console.log('signer address is ', permitter.address )
 
-    let flatSig = await permitter.signMessage(messageHashBinary)
+    let flatSig = await permitter.signMessage(msgHash)
  
-    
+  
+            //this is acting the same as the contract 
+    let pubKey = utils.recoverPublicKey(msgHash, flatSig);
+    let recAddress = utils.computeAddress(pubKey)
+    console.log('recAddress',recAddress)
+
+      
     // For Solidity, we need the expanded-format of a signature
     let sig = utils.splitSignature(flatSig);
 
-
-
-    let recAddress = utils.recoverAddress(messageHashBinary, flatSig)  
-        console.log('recAddress',recAddress)
 
 
     /*
