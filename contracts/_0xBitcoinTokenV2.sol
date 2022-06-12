@@ -194,8 +194,6 @@ contract _0xBitcoinTokenV2 is ERC20Interface {
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber; 
 
-    mapping(bytes32 => bool) public digestUsedForSolution;
-
     uint public tokensMinted;    
 
     mapping(address => uint) balances;   
@@ -280,11 +278,9 @@ contract _0xBitcoinTokenV2 is ERC20Interface {
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
 
-        //only allow one reward for each digest
-        bool digestUsed = digestUsedForSolution[digest];
-        digestUsedForSolution[digest] = true;
-        require(digestUsed == false);  //prevent the same answer from awarding twice
-
+        //only allow one reward for each block
+        require(lastRewardEthBlockNumber != block.number);
+      
         uint reward_amount = getMiningReward();
 
         balances[minter] = balances[minter].add(reward_amount);
