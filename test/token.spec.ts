@@ -103,6 +103,9 @@ describe('Upgrade Contract', () => {
 
       expect(await upgradeTokenContract.originalMinedSupply( ))
       .to.eql( "30000" )
+
+      expect(await upgradeTokenContract.currentMiningReward( ))
+      .to.eql( "5000000000" )
  
  
 
