@@ -403,17 +403,13 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
     }
 }
 
-// ----------------------------------------------------------------------------
 
-// ERC20 Token, with the addition of symbol, name and decimals and an
-
-// ----------------------------------------------------------------------------
 
 contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
    
     using ExtendedMath for uint;
    
-    string public version = "2";    
+    string public version;    
 
     uint public latestDifficultyPeriodStarted;
 
@@ -454,7 +450,9 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         decimals = 8;
 
-        DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, "2");
+        version = "2";
+
+        DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, version);
 
         totalSupply = 21000000 * 10**uint(decimals); 
 
