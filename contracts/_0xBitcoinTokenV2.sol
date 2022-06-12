@@ -52,21 +52,21 @@ library ExtendedMath {
 
 abstract contract ERC20Interface {
 
-    function totalSupply() public view returns (uint);
+    function totalSupply() external virtual view returns (uint);
 
-    function balanceOf(address tokenOwner) public view returns (uint balance);
+    function balanceOf(address tokenOwner) external virtual view returns (uint balance);
 
-    function allowance(address tokenOwner, address spender) public view returns (uint remaining);
+    function allowance(address tokenOwner, address spender) external virtual view returns (uint remaining);
 
-    function transfer(address to, uint tokens) public returns (bool success);
+    function transfer(address to, uint tokens) external virtual returns (bool success);
 
-    function approve(address spender, uint tokens) public returns (bool success);
+    function approve(address spender, uint tokens) external virtual returns (bool success);
 
-    function transferFrom(address from, address to, uint tokens) public returns (bool success);
+    function transferFrom(address from, address to, uint tokens) external virtual returns (bool success);
 
-    function _approve(address spender, uint tokens) internal returns (bool success);
+    function _approve(address owner, address spender, uint tokens) internal virtual returns (bool success);
 
-    function _transfer(address from, address to, uint tokens) internal returns (bool success);
+    function _transfer(address from, address to, uint tokens) internal virtual returns (bool success);
 
     event Transfer(address indexed from, address indexed to, uint tokens);
 
@@ -80,18 +80,17 @@ abstract contract ERC20Standard is ERC20Interface {
     mapping(address => uint) balances;   
     mapping(address => mapping(address => uint)) allowed;
  
-    uint public totalSupply;
+    uint public override totalSupply; 
 
 
 
-
-    function _transfer(address from, address to, uint tokens) internal returns (bool success) {
+    function _transfer(address from, address to, uint tokens) internal override returns (bool success) {
 
         balances[from] = balances[from] - (tokens);
 
         balances[to] = balances[to] + (tokens);
 
-        Transfer(from, to, tokens);
+        emit Transfer(from, to, tokens);
 
         return true;
     }
@@ -104,7 +103,7 @@ abstract contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function balanceOf(address tokenOwner) public view returns (uint balance) {
+    function balanceOf(address tokenOwner) public override view returns (uint balance) {
 
         return balances[tokenOwner];
 
@@ -122,7 +121,7 @@ abstract contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function transfer(address to, uint tokens) public returns (bool success) {
+    function transfer(address to, uint tokens) public override returns (bool success) {
 
         return _transfer(msg.sender, to, tokens);
 
@@ -147,23 +146,21 @@ abstract contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function approve(address spender, uint tokens) public returns (bool success) {
+    function approve(address spender, uint tokens) public override returns (bool success) {
 
         return _approve(msg.sender, spender,tokens);
 
     }
 
-      function _approve(address owner, address spender, uint tokens) internal returns (bool success) {
+    function _approve(address owner, address spender, uint tokens) internal override returns (bool success) {
 
         allowed[owner][spender] = tokens;
 
-        Approval(owner, spender, tokens);
+        emit Approval(owner, spender, tokens);
 
         return true;
 
-    }
-
-
+    } 
 
 
     // ------------------------------------------------------------------------
@@ -184,7 +181,7 @@ abstract contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function transferFrom(address from, address to, uint tokens) public returns (bool success) {
+    function transferFrom(address from, address to, uint tokens) public override returns (bool success) {
         
         allowed[from][msg.sender] = allowed[from][msg.sender] - (tokens);
 
@@ -201,7 +198,7 @@ abstract contract ERC20Standard is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function allowance(address tokenOwner, address spender) public view returns (uint remaining) {
+    function allowance(address tokenOwner, address spender) public override view returns (uint remaining) {
 
         return allowed[tokenOwner][spender];
 
@@ -516,7 +513,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         uint reward_amount = currentMiningReward;
 
         balances[minter] = balances[minter] + (reward_amount);
-        Transfer(address(this), minter, reward_amount);
+        emit Transfer(address(this), minter, reward_amount);
 
         tokensMinted = tokensMinted + (reward_amount);
 
@@ -531,7 +528,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         _startNewMiningEpoch();
 
-        Mint(minter, reward_amount, epochCount, challengeNumber );        
+        emit Mint(minter, reward_amount, epochCount, challengeNumber );        
 
         return true;
 
@@ -566,7 +563,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
       //do this last since this is a protection mechanism in the mint() function
-      challengeNumber = block.blockhash(block.number - 1);      
+      challengeNumber = blockhash(block.number - 1);      
 
     }
 
@@ -644,7 +641,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         balances[from] = balances[from] + (amount);
         amountDeposited = amountDeposited + (amount);
         
-        Transfer(address(this), from, amount);
+        emit Transfer(address(this), from, amount);
         
         return true;
     }
