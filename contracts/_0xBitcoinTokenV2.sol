@@ -50,7 +50,7 @@ library ExtendedMath {
 
 // ----------------------------------------------------------------------------
 
-contract ERC20Interface {
+abstract contract ERC20Interface {
 
     function totalSupply() public view returns (uint);
 
@@ -74,11 +74,15 @@ contract ERC20Interface {
 
 }
 
-contract ERC20Standard is ERC20Interface {
+abstract contract ERC20Standard is ERC20Interface {
  
 
     mapping(address => uint) balances;   
     mapping(address => mapping(address => uint)) allowed;
+ 
+    uint public totalSupply;
+
+
 
 
     function _transfer(address from, address to, uint tokens) internal returns (bool success) {
@@ -209,16 +213,16 @@ contract ERC20Standard is ERC20Interface {
 
 
 
-contract EIP918Interface {
+abstract contract EIP918Interface {
 
-  function challengeNumber() external returns (bytes32);
-  function tokensMinted() external returns (uint256);
-  function miningTarget() external returns (uint256);
-  function maxSupplyForEra() external returns (uint256);  
-  function latestDifficultyPeriodStarted() external returns (uint256);
-  function rewardEra() external returns (uint256);
-  function epochCount() external returns (uint256); 
-  function getMiningReward() external returns (uint256);
+  function challengeNumber() virtual external returns (bytes32);
+  function tokensMinted() virtual external returns (uint256);
+  function miningTarget() virtual external returns (uint256);
+  function maxSupplyForEra() virtual external returns (uint256);  
+  function latestDifficultyPeriodStarted() virtual external returns (uint256);
+  function rewardEra() virtual external returns (uint256);
+  function epochCount() virtual external returns (uint256); 
+  function getMiningReward() virtual external returns (uint256);
 
 }
 
@@ -379,7 +383,7 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
         bytes32 r,
         bytes32 s
     ) internal {
-        require(deadline >= now, "Permit is expired");
+        require(deadline >= block.timestamp, "Permit is expired");
 
         bytes memory data = abi.encode(
             PERMIT_TYPEHASH,
@@ -418,7 +422,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
     uint8 public decimals;
 
-    uint public _totalSupply;
+    
 
     uint public latestDifficultyPeriodStarted;
 
@@ -449,10 +453,9 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     uint256 public amountDeposited;
 
     event Mint(address from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
-    event Transfer(address from, address to, uint amount);
+    
 
-
-    function _0xBitcoinTokenV2( address _originalTokenContract ) public {
+    constructor( address _originalTokenContract ) {
 
         originalTokenContract = _originalTokenContract;
 
@@ -463,10 +466,8 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         decimals = 8;
 
         DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, "2");
-        
 
-        _totalSupply = 21000000 * 10**uint(decimals);
- 
+        totalSupply = 21000000 * 10**uint(decimals); 
 
         initialize(); 
 
@@ -504,7 +505,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         
 
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-        bytes32 digest = keccak256(challengeNumber, minter, nonce );
+        bytes32 digest = keccak256(abi.encodePacked(challengeNumber, minter, nonce ));
 
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
@@ -552,7 +553,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
       //set the next minted supply at which the era will change
       // total supply is 2100000000000000  because of 8 decimal places
-      maxSupplyForEra = _totalSupply - (_totalSupply / ( 2**(rewardEra + 1)));
+      maxSupplyForEra = totalSupply - (totalSupply / ( 2**(rewardEra + 1)));
 
       epochCount = epochCount + 1;
 
@@ -655,7 +656,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
    
     function getMintDigest(uint256 nonce, address minter, bytes32 challenge_number) public view returns (bytes32 digesttest) {
 
-        bytes32 digest = keccak256(challenge_number,minter,nonce);
+        bytes32 digest = keccak256(abi.encodePacked(challenge_number,minter,nonce));
 
         return digest;
 
@@ -664,7 +665,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
       
     function checkMintSolution(uint256 nonce, address minter, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
 
-        bytes32 digest = keccak256(challenge_number,minter,nonce);
+        bytes32 digest = keccak256(abi.encodePacked(challenge_number,minter,nonce));
 
         if(uint256(digest) > testTarget) revert();
 
@@ -674,20 +675,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
 
     
-
-
-
-    // ------------------------------------------------------------------------
-
-    // Total supply
-
-    // ------------------------------------------------------------------------
-
-    function totalSupply() public view returns (uint) {
-
-        return _totalSupply;
-
-    }
 
 
     function minedSupply() public view returns (uint) {
