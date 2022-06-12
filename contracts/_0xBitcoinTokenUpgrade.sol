@@ -159,7 +159,7 @@ contract ApproveAndCallFallBack {
 
 // ----------------------------------------------------------------------------
 
-contract _0xBitcoinTokenUpgrade is ERC20Interface {
+contract _0xBitcoinTokenV2 is ERC20Interface {
 
     using SafeMath for uint;
     using ExtendedMath for uint;
@@ -168,6 +168,8 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
     string public symbol;
 
     string public name;
+
+    string public version = "2";
 
     uint8 public decimals;
 
@@ -213,7 +215,7 @@ contract _0xBitcoinTokenUpgrade is ERC20Interface {
 
     // ------------------------------------------------------------------------
 
-    function _0xBitcoinTokenUpgrade( address _originalTokenContract ) public {
+    function _0xBitcoinTokenV2( address _originalTokenContract ) public {
 
         originalTokenContract = _originalTokenContract;
 
