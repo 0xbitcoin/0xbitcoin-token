@@ -74,8 +74,12 @@ abstract contract ERC20Interface {
 
 }
 
-abstract contract ERC20Standard is ERC20Interface {
+contract ERC20Standard is ERC20Interface {
  
+    string public symbol;
+    string public name;
+
+    uint8 public decimals;
 
     mapping(address => uint) balances;   
     mapping(address => mapping(address => uint)) allowed;
@@ -406,20 +410,10 @@ contract EIP2612 is EIP712Domain,ERC20Standard {
 // ----------------------------------------------------------------------------
 
 contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
-
    
     using ExtendedMath for uint;
-
-
-    string public symbol;
-
-    string public name;
-
-    string public version = "2";
-
-    uint8 public decimals;
-
-    
+   
+    string public version = "2";    
 
     uint public latestDifficultyPeriodStarted;
 
@@ -441,11 +435,9 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     uint public lastRewardAmount;
     uint public lastRewardEthBlockNumber; 
 
-    uint public tokensMinted;    
-
+    uint public tokensMinted;
 
     address public originalTokenContract; 
-    uint256 public originalMinedSupply;  
 
     uint256 public amountDeposited;
 
@@ -476,7 +468,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
       //set values to pick up where was left off 
       tokensMinted = EIP918Interface( originalTokenContract  ).tokensMinted();
-      originalMinedSupply = tokensMinted;
 
       rewardEra = EIP918Interface(originalTokenContract).rewardEra();
       maxSupplyForEra = EIP918Interface(originalTokenContract).maxSupplyForEra();
@@ -575,7 +566,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         //assume 360 ethereum blocks per hour
 
         //we want miners to spend 10 minutes to mine each 'block', about 60 ethereum blocks = one 0xbitcoin epoch
-        uint epochsMined = _BLOCKS_PER_READJUSTMENT; //256
+        uint epochsMined = _BLOCKS_PER_READJUSTMENT; 
 
         uint targetEthBlocksPerDiffPeriod = epochsMined * 60; //should be 60 times slower than ethereum
 
