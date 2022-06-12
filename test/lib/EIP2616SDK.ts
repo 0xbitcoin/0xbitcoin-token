@@ -1,5 +1,5 @@
 import { Wallet,  utils } from "ethers";
-
+import ethUtil, { bufferToHex, ecrecover, ecsign, pubToAddress, toBuffer } from 'ethereumjs-util'
 
 export interface PermitApproval{
 
@@ -83,24 +83,40 @@ export async function signPermitApproval(
             utils.keccak256(typeHashAndData) ]
         )
     );*/
-   console.log('cDigest', digest )  //this is correct 
+   console.log('cDigest', digest )   
+ 
 
-    let msgHash =  (utils.arrayify(digest));
+
+   var msgBuffer= toBuffer(digest)
+
+   const sig = ecsign(msgBuffer, toBuffer(permitter.privateKey))
+  
+
+   console.log('sig',sig)
 
 
+
+
+   var hashBuf = toBuffer(digest)
+
+   const pubKey  = ecrecover(hashBuf, sig.v, sig.r, sig.s);
+   const addrBuf = pubToAddress(pubKey);
+   const recoveredSignatureSigner    = bufferToHex(addrBuf);
+   console.log('recoveredSignatureSigner',recoveredSignatureSigner)
+/*
     console.log('signer address is ', permitter.address )
 
-    let flatSig = await permitter.signMessage(msgHash)
+    let flatSig = await permitter.signMessage(messageHashBytes)
  
   
             //this is acting the same as the contract 
-    let pubKey = utils.recoverPublicKey(msgHash, flatSig);
+    let pubKey = utils.recoverPublicKey(digest, flatSig);
     let recAddress = utils.computeAddress(pubKey)
     console.log('recAddress',recAddress)
-
+*/
       
     // For Solidity, we need the expanded-format of a signature
-    let sig = utils.splitSignature(flatSig);
+    //let sig = utils.splitSignature(flatSig);
 
 
 

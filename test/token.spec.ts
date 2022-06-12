@@ -119,7 +119,7 @@ describe('Upgrade Contract', () => {
 
   it('should permit approve', async () => { 
 
-    console.log('miner is',miner.address)
+    console.log('permitter is',permitter.address)
 
     let dSep = await upgradeTokenContract.DOMAIN_SEPARATOR()
 
@@ -155,7 +155,8 @@ describe('Upgrade Contract', () => {
     console.log('domainData',domainData)
    
 
-    let permitInputs = await signPermitApproval( approvalInputs, domainData, permitter  )
+    let permitInputs = await signPermitApproval( 
+      approvalInputs, domainData, permitter  )
 
 
     let thData = await upgradeTokenContract.testPermit(
