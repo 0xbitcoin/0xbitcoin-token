@@ -73,7 +73,11 @@ contract ERC20Standard is ERC20Interface {
  
     uint public override totalSupply; 
 
-
+    constructor(string memory _symbol, string memory _name, uint8 _decimals){
+        symbol = _symbol;
+        name = _name;
+        decimals = _decimals;
+    }
 
     function _transfer(address from, address to, uint tokens) internal override returns (bool success) {
 
@@ -337,7 +341,7 @@ library EIP712 {
  * @title EIP-2612
  * @notice Provide internal implementation for gas-abstracted approvals
  */
-contract EIP2612 is EIP712Domain,ERC20Standard {
+abstract contract EIP2612 is EIP712Domain,ERC20Interface {
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
     bytes32
         public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
@@ -412,7 +416,7 @@ library ExtendedMath {
 
 
 
-contract xBitsToken is ERC20Standard, EIP2612 {
+contract xBitsToken is ERC20Standard("xBits","xBits Token",8), EIP2612 {
    
     using ExtendedMath for uint;
    
@@ -451,12 +455,6 @@ contract xBitsToken is ERC20Standard, EIP2612 {
 
         originalTokenContract = _originalTokenContract;
 
-        symbol = "xBit";
-
-        name = "xBits Token";
-
-        decimals = 8;
-
         version = "2";
 
         DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, version);
@@ -468,7 +466,7 @@ contract xBitsToken is ERC20Standard, EIP2612 {
     }
 
     //set values to continue state forwards where it left off 
-    function initialize() internal {
+    function initialize() internal virtual {
  
       epochCount = EIP918Interface( originalTokenContract  ).epochCount();
       
@@ -503,25 +501,23 @@ contract xBitsToken is ERC20Standard, EIP2612 {
 
         //only allow one reward for each block
         require(lastRewardEthBlockNumber != block.number);
-      
-        uint reward_amount = currentMiningReward;
 
-        balances[minter] = balances[minter] + (reward_amount);
-        emit Transfer(address(this), minter, reward_amount);
+        balances[minter] = balances[minter] + (currentMiningReward);
+        emit Transfer(address(this), minter, currentMiningReward);
 
-        tokensMinted = tokensMinted + (reward_amount);
+        tokensMinted = tokensMinted + currentMiningReward;
 
         //Cannot mint more tokens than there are
         require(tokensMinted <= maxSupplyForEra);
 
         //set readonly diagnostics data
         lastRewardTo = minter;
-        lastRewardAmount = reward_amount;
+        lastRewardAmount = currentMiningReward;
         lastRewardEthBlockNumber = block.number;
 
         _startNewMiningEpoch();
 
-        emit Mint(minter, reward_amount, epochCount, challengeNumber );        
+        emit Mint(minter, currentMiningReward, epochCount, challengeNumber );        
 
         return true;
 
@@ -550,24 +546,23 @@ contract xBitsToken is ERC20Standard, EIP2612 {
       //every so often, readjust difficulty. Dont readjust when deploying
       if(epochCount % _BLOCKS_PER_READJUSTMENT == 0)
       {
-        _reAdjustDifficulty();
+        uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
+
+        _reAdjustDifficulty(ethBlocksSinceLastDifficultyPeriod);
       }
 
 
       //make the latest ethereum block hash a part of the next challenge for PoW to prevent pre-mining future blocks
-      challengeNumber = blockhash(block.number - 1);      
+     challengeNumber = blockhash(block.number - 1);      
 
     }
 
 
  
-    function _reAdjustDifficulty() internal {
+    function _reAdjustDifficulty(uint ethBlocksSinceLastDifficultyPeriod) internal {
 
-        uint ethBlocksSinceLastDifficultyPeriod = block.number - latestDifficultyPeriodStarted;
 
-        uint epochsMined = _BLOCKS_PER_READJUSTMENT; 
-
-        uint targetEthBlocksPerDiffPeriod = epochsMined * 60; 
+        uint targetEthBlocksPerDiffPeriod = _BLOCKS_PER_READJUSTMENT * 60; 
 
         //if there were less eth blocks passed in time than expected
         if( ethBlocksSinceLastDifficultyPeriod < targetEthBlocksPerDiffPeriod )
@@ -603,7 +598,7 @@ contract xBitsToken is ERC20Standard, EIP2612 {
     }
 
 
-    //this is a recent ethereum block hash, used to prevent pre-mining future blocks
+    
     function getChallengeNumber() public view returns (bytes32) {
         return challengeNumber;
     }
@@ -681,7 +676,7 @@ contract xBitsToken is ERC20Standard, EIP2612 {
 
     // ------------------------------------------------------------------------
 
-    receive() external payable {
+    receive() external payable virtual {
 
         revert();
 
