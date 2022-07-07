@@ -30,6 +30,13 @@ import semver from 'semver'
 import { task ,HardhatUserConfig} from 'hardhat/config'
 import { HardhatEthersHelpers } from '@nomiclabs/hardhat-ethers/types'
 
+
+
+
+
+require('@mangrovedao/hardhat-test-solidity');
+
+
 const NODE_VERSION = 'v16.13.1'
 if (!semver.satisfies(process.version, NODE_VERSION))
   throw new Error(
