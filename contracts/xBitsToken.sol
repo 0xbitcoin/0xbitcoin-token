@@ -412,7 +412,7 @@ library ExtendedMath {
 
 
 
-contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
+contract xBitsToken is ERC20Standard, EIP2612 {
    
     using ExtendedMath for uint;
    
@@ -451,9 +451,9 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
 
         originalTokenContract = _originalTokenContract;
 
-        symbol = "0xBTC2";
+        symbol = "xBit";
 
-        name = "0xBitcoin Token v2";
+        name = "xBits Token";
 
         decimals = 8;
 
@@ -487,7 +487,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     }
 
 
-    function mint(uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
+    function mint(uint256 nonce, bytes32) public returns (bool success) {
 
         return mintTo(nonce,msg.sender);
 
@@ -634,24 +634,6 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
         return true;
     }
 
-   
-    function getMintDigest(uint256 nonce, address minter, bytes32 challenge_number) public view returns (bytes32 digesttest) {
-
-        bytes32 digest = keccak256(abi.encodePacked(challenge_number,minter,nonce));
-
-        return digest;
-
-    }
-      
-    function checkMintSolution(uint256 nonce, address minter, bytes32 challenge_number, uint testTarget) public view returns (bool success) {
-
-        bytes32 digest = keccak256(abi.encodePacked(challenge_number,minter,nonce));
-
-        if(uint256(digest) > testTarget) revert();
-
-        return true;
-
-    }
 
     function minedSupply() public view returns (uint) {
 
@@ -682,7 +664,7 @@ contract _0xBitcoinTokenV2 is ERC20Standard, EIP2612 {
     }
 
       
-    function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public returns (bool success) {
+    function receiveApproval(address from, uint256 tokens, address token, bytes memory) public returns (bool success) {
         
         require( token == originalTokenContract );
         

@@ -26,7 +26,7 @@ const deployOptions: DeployFunction = async (hre) => {
   })
 
   const upgradeToken = await deploy({
-    contract: '_0xBitcoinTokenV2',
+    contract: 'xBitsToken',
     args: [ originalToken.address ],
     skipIfAlreadyDeployed: false,
     hre, 
