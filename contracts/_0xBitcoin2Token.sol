@@ -420,7 +420,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
    
     using ExtendedMath for uint;
 
-    uint public constant version = 2;
+    string public constant version = "2";
      
     uint public latestDifficultyPeriodStarted;
 
@@ -496,7 +496,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
     function mintTo(uint256 nonce, address minter) public returns (bool success) {
     
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-        bytes32 digest = keccak256(abi.encodePacked(challengeNumber, minter, nonce ));
+        bytes32 digest = keccak256(abi.encode(keccak256(abi.encode(challengeNumber, minter, nonce ))));
 
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
@@ -619,7 +619,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
      * @dev Merkle proof claim from snapshot of OriginalToken balances
      * @param amount Amount of tokens to claim
      */
-    function claim(uint amount,  bytes32[]  merkleProof) external returns (bool)
+    function claim(uint amount,  bytes32[] calldata merkleProof) external returns (bool)
     {         
 
         require(!hasClaimed[msg.sender], "Tokens already claimed");
