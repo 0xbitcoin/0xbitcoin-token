@@ -3,8 +3,6 @@ pragma solidity ^0.8.6;
 
 // ----------------------------------------------------------------------------
 
-// '0xBitcoin Token' contract  
-
 // Mineable ERC20 Token using Proof Of Work
 
 //
@@ -460,7 +458,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
 
         maximumSupply = 21000000 * 10**uint(decimals); 
 
-        
+        // The deployer starts with nothing! All 0xBTC must be mined with Proof of Work.
 
         initialize(); 
 
@@ -495,7 +493,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
     function mintTo(uint256 nonce, address minter) public returns (bool success) {
     
         //the PoW must contain work that includes a recent ethereum block hash (challenge number) and the msg.sender's address to prevent MITM attacks
-        bytes32 digest = keccak256(abi.encode(keccak256(abi.encode(challengeNumber, minter, nonce ))));
+        bytes32 digest = keccak256(abi.encodePacked(keccak256(abi.encodePacked(challengeNumber, minter, nonce ))));
 
         //the digest must be smaller than the target
         if(uint256(digest) > miningTarget) revert();
