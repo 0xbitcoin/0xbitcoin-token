@@ -443,25 +443,24 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
     uint public lastRewardEthBlockNumber; 
 
     uint public tokensMinted;
+    uint public maximumSupply; 
 
     address public originalTokenContract; 
 
-    bytes32 public merkleRootHash; 
-    mapping(address => bool) public hasClaimed;
-    uint256 public amountClaimed;   
+    
 
     event Mint(address from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
     
 
-    constructor( address _originalTokenContract, bytes32 _merkleRootHash ) {
+    constructor( address _originalTokenContract  ) {
 
         originalTokenContract = _originalTokenContract;
         
         DOMAIN_SEPARATOR = EIP712.makeDomainSeparator(name, version);
 
-        totalSupply = 21000000 * 10**uint(decimals); 
+        maximumSupply = 21000000 * 10**uint(decimals); 
 
-        merkleRootHash = _merkleRootHash; 
+        
 
         initialize(); 
 
@@ -508,6 +507,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
         emit Transfer(address(this), minter, currentMiningReward);
 
         tokensMinted = tokensMinted + currentMiningReward;
+        totalSupply = totalSupply + currentMiningReward; 
 
         //Cannot mint more tokens than there are
         require(tokensMinted <= maxSupplyForEra);
@@ -541,7 +541,7 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
 
       //set the next minted supply at which the era will change
       //total supply is 2100000000000000  because of 8 decimal places
-      maxSupplyForEra = totalSupply - (totalSupply / ( 2**(rewardEra + 1)));
+      maxSupplyForEra = maximumSupply - (maximumSupply / ( 2**(rewardEra + 1)));
 
       epochCount = epochCount + 1;
 
@@ -614,63 +614,8 @@ contract _0xBitcoinToken2 is ERC20Standard("0xBTC2","0xBitcoin2",8), EIP2612 {
        return miningTarget;
     }
 
-
-     /**
-     * @dev Merkle proof claim from snapshot of OriginalToken balances
-     * @param amount Amount of tokens to claim
-     */
-    function claim(uint amount,  bytes32[] calldata merkleProof) external returns (bool)
-    {         
-
-        require(!hasClaimed[msg.sender], "Tokens already claimed");
-        require(
-            verifyMerkleProof(msg.sender, amount, merkleProof, merkleRootHash),
-            "Invalid Merkle proof"
-        );
-
-        hasClaimed[msg.sender] = true;
-        balances[msg.sender] += amount;
-        amountClaimed += amount;
-
-        emit Transfer(address(this), msg.sender, amount);
-        return true;
-
-    }
-
-
-    function verifyMerkleProof(
-        address account,
-        uint256 amount,
-        bytes32[] memory merkleProof,
-        bytes32 root
-    ) public pure returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(account, amount));
-        bytes32 computedHash = leaf;
-
-        for (uint256 i = 0; i < merkleProof.length; i++) {
-            bytes32 proofElement = merkleProof[i];
-
-            if (computedHash < proofElement) {
-                // Hash current leaf with current proof element
-                computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
-            } else {
-                // Hash current proof element with current leaf
-                computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
-            }
-        }
-
-        // Check if computed hash matches the root
-        return computedHash == root;
-    }
-
-
-
-
-    function minedSupply() public view returns (uint) {
-
-        return tokensMinted;
-
-    }
+    
+ 
    
       /**
      * @notice Update allowance with a signed permit
