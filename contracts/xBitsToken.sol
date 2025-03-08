@@ -427,8 +427,8 @@ contract xBitsToken is ERC20Standard("xBits","xBits Token",8), EIP2612 {
     uint public epochCount; 
 
     uint public constant _BLOCKS_PER_READJUSTMENT = 1024;   
-    uint public  constant _MINIMUM_TARGET = 2**16;      
-    uint public  constant _MAXIMUM_TARGET = 2**234;
+    uint public constant _MINIMUM_TARGET = 2**16;      
+    uint public constant _MAXIMUM_TARGET = 2**234;
 
 
     uint public miningTarget;
